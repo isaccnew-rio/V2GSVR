@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Seguridad Vial Riobamba | Gestión v5</title>
+    <title>Seguridad Vial Riobamba | Gestión v5 + MIRA</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -165,6 +165,50 @@
         </div>
     </div>
 
+    <!-- ============================================================ -->
+    <!-- MIRA — Agente de Inteligencia Artificial para Análisis Vial  -->
+    <!-- ============================================================ -->
+    <button class="mira-fab" id="miraFab" onclick="toggleMira()" aria-label="Agente MIRA">
+        <i class="fa-solid fa-robot"></i>
+        <span class="mira-fab-pulse"></span>
+    </button>
+
+    <div class="mira-container mira-hidden" id="miraPanel">
+        <div class="mira-header">
+            <div class="mira-title">
+                <i class="fa-solid fa-robot"></i>
+                <span>MIRA</span>
+                <span class="mira-badge">IA</span>
+            </div>
+            <div class="mira-header-actions">
+                <button class="mira-minimize" onclick="toggleMira()" aria-label="Minimizar MIRA">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="mira-body" id="miraBody">
+            <div class="mira-welcome">
+                <div class="mira-welcome-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+                <p class="mira-welcome-title">Agente MIRA Activo</p>
+                <p class="mira-welcome-sub">Motor de Inteligencia para Reportes de Accidentalidad</p>
+                <div class="mira-suggestions">
+                    <button class="mira-chip" onclick="miraChip('resumen general')">📊 Resumen General</button>
+                    <button class="mira-chip" onclick="miraChip('hora pico')">🕐 Hora Pico</button>
+                    <button class="mira-chip" onclick="miraChip('mes con más siniestros')">📅 Mes Crítico</button>
+                    <button class="mira-chip" onclick="miraChip('correlación heridos')">🔗 Correlación</button>
+                </div>
+            </div>
+        </div>
+        <div class="mira-input-bar">
+            <input type="text" id="miraInput" class="mira-input" placeholder="Ej: ¿Cuál es la hora pico en Enero?"
+                onkeydown="if(event.key==='Enter')miraSend()" autocomplete="off">
+            <button class="mira-send" onclick="miraSend()" aria-label="Enviar consulta">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    <!-- ============================================================ -->
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -172,6 +216,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script src="script.js"></script>
+    <script src="mira.js"></script>
 </body>
 
 </html>
