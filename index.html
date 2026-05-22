@@ -190,17 +190,15 @@
             <div class="mira-welcome">
                 <div class="mira-welcome-icon"><i class="fa-solid fa-satellite-dish"></i></div>
                 <p class="mira-welcome-title">Agente MIRA Activo</p>
-                <p class="mira-welcome-sub">Motor de Inteligencia para Reportes de Accidentalidad</p>
+                <p class="mira-welcome-sub">Modelo de Inteligencia para Registro de Accidentes</p>
                 <div class="mira-suggestions">
                     <button class="mira-chip" onclick="miraChip('resumen general')">📊 Resumen General</button>
-                    <button class="mira-chip" onclick="miraChip('hora pico')">🕐 Hora Pico</button>
-                    <button class="mira-chip" onclick="miraChip('mes con más siniestros')">📅 Mes Crítico</button>
                     <button class="mira-chip" onclick="miraChip('correlación heridos')">🔗 Correlación</button>
                 </div>
             </div>
         </div>
         <div class="mira-input-bar">
-            <input type="text" id="miraInput" class="mira-input" placeholder="Ej: ¿Cuál es la hora pico en Enero?"
+            <input type="text" id="miraInput" class="mira-input" placeholder="Ej: ¿Mes con mayor cantidad de accidentes?"
                 onkeydown="if(event.key==='Enter')miraSend()" autocomplete="off">
             <button class="mira-send" onclick="miraSend()" aria-label="Enviar consulta">
                 <i class="fa-solid fa-paper-plane"></i>
