@@ -1,10 +1,10 @@
 /* ============================================================
-   MIRA — Motor de Inteligencia para Reportes de Accidentalidad
-   Accede exclusivamente a: allReportesData (hora, date, Fallecidos, Heridos)
+   MIRA — Modelo de Inteligencia para Registro de Accidentes
+   Acceso estricto: allReportesData (hora, date, Fallecidos, Heridos)
    ============================================================ */
 
-const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const MESES_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const m_mo = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const m_mo_s = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
 /* --- UI Toggle --- */
 function toggleMira() {
@@ -14,220 +14,192 @@ function toggleMira() {
     f.style.display = p.classList.contains('mira-hidden') ? 'flex' : 'none';
 }
 
-function miraChip(txt) { document.getElementById('miraInput').value = txt; miraSend(); }
+function miraChip(txt) { 
+    document.getElementById('miraInput').value = txt; 
+    miraSend(); 
+}
 
 function miraSend() {
-    const inp = document.getElementById('miraInput');
-    const q = inp.value.trim();
+    const i = document.getElementById('miraInput');
+    const q = i.value.trim();
     if (!q) return;
-    inp.value = '';
-    miraAddMsg(q, 'user');
-    miraShowTyping();
-    setTimeout(() => { miraRemoveTyping(); miraAddMsg(miraProc(q), 'bot'); }, 600);
+    i.value = '';
+    m_msg(q, 'user');
+    m_typ_s();
+    setTimeout(() => { m_typ_h(); m_msg(miraProc(q), 'bot'); }, 600);
 }
 
-function miraAddMsg(html, who) {
-    const body = document.getElementById('miraBody');
-    const wel = body.querySelector('.mira-welcome');
-    if (wel) wel.remove();
+function m_msg(h, w) {
+    const b = document.getElementById('miraBody');
+    const w_el = b.querySelector('.mira-welcome');
+    if (w_el) w_el.remove();
     const d = document.createElement('div');
-    d.className = `mira-msg mira-msg-${who}`;
-    d.innerHTML = `<div class="mira-bubble">${html}</div>`;
-    body.appendChild(d);
-    body.scrollTop = body.scrollHeight;
+    d.className = `mira-msg mira-msg-${w}`;
+    d.innerHTML = `<div class="mira-bubble">${h}</div>`;
+    b.appendChild(d);
+    b.scrollTop = b.scrollHeight;
 }
 
-function miraShowTyping() {
-    const body = document.getElementById('miraBody');
+function m_typ_s() {
+    const b = document.getElementById('miraBody');
     const d = document.createElement('div');
     d.className = 'mira-msg mira-msg-bot mira-typing-wrap';
     d.innerHTML = '<div class="mira-typing"><span></span><span></span><span></span></div>';
-    body.appendChild(d);
-    body.scrollTop = body.scrollHeight;
+    b.appendChild(d);
+    b.scrollTop = b.scrollHeight;
 }
 
-function miraRemoveTyping() {
+function m_typ_h() {
     const t = document.querySelector('.mira-typing-wrap');
     if (t) t.remove();
 }
 
-/* --- Helpers --- */
-function mGetDate(item) {
-    if (item.date && typeof item.date === 'string' && item.date.length >= 10) {
-        const p = item.date.split('-');
+/* --- Parseo de Datos --- */
+function m_dt(i) {
+    if (i.date && typeof i.date === 'string' && i.date.length >= 10) {
+        const p = i.date.split('-');
         return new Date(p[0], p[1] - 1, p[2]);
     }
-    const fb = item.fecha_reporte || item.fecha || item.created_at;
-    if (fb) { const d = new Date(fb); if (!isNaN(d)) return d; }
     return null;
 }
 
-function mGetMonth(item) { const d = mGetDate(item); return d ? d.getMonth() : -1; }
-function mGetHr(item) { return item.hora ? parseInt(item.hora.toString().split(':')[0], 10) : -1; }
-function mGetFall(item) { return parseInt(item.Fallecidos || 0); }
-function mGetHer(item) { return parseInt(item.Heridos || 0); }
+function m_mo_idx(i) { const d = m_dt(i); return d ? d.getMonth() : -1; }
+function m_hr_idx(i) { return i.hora ? parseInt(i.hora.toString().split(':')[0], 10) : -1; }
+function m_day_idx(i) { const d = m_dt(i); return d ? d.getDate() : -1; }
 
-function mDetectMes(q) {
+function m_fall(i) { 
+    const v = i.Fallecidos; 
+    return (v === 'NULL' || v === null || v === undefined) ? 0 : parseInt(v); 
+}
+
+function m_her(i) { 
+    const v = i.Heridos; 
+    return (v === 'NULL' || v === null || v === undefined) ? 0 : parseInt(v); 
+}
+
+function m_det_mo(q) {
     const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    for (let i = 0; i < MESES.length; i++) {
-        const mn = MESES[i].normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        if (ql.includes(mn) || ql.includes(MESES_SHORT[i])) return i;
+    for (let i = 0; i < m_mo.length; i++) {
+        if (ql.includes(m_mo[i]) || ql.includes(m_mo_s[i])) return i;
     }
     return -1;
 }
 
-function mFmtHr(h) { return h < 10 ? `0${h}:00` : `${h}:00`; }
+function m_fmt_hr(h) { return h < 10 ? `0${h}:00` : `${h}:00`; }
 
-/* --- Core Analysis Functions --- */
-function mConteoMensual() {
+/* --- Algoritmos de Agregación --- */
+function m_max_mes() {
     const c = {};
-    allReportesData.forEach(r => { const m = mGetMonth(r); if (m >= 0) c[m] = (c[m] || 0) + 1; });
-    return c;
+    allReportesData.forEach(r => { const m = m_mo_idx(r); if (m >= 0) c[m] = (c[m] || 0) + 1; });
+    let mx = 0, m_idx = -1;
+    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; m_idx = parseInt(k); } });
+    return m_idx >= 0 ? `El mes con mayor cantidad de accidentes es <strong>${m_mo[m_idx]}</strong> con <span class="mira-stat">${mx}</span> siniestros.` : 'Datos insuficientes.';
 }
 
-function mMaxFechaSiniestros() {
-    const c = {};
-    allReportesData.forEach(r => { const d = mGetDate(r); if (d) { const k = d.toISOString().split('T')[0]; c[k] = (c[k] || 0) + 1; } });
-    let mx = 0, mxd = '';
-    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; mxd = k; } });
-    return { date: mxd, count: mx };
-}
-
-function mHoraPico(mes) {
+function m_max_hr(m_fltr) {
     const c = {};
     allReportesData.forEach(r => {
-        if (mes >= 0 && mGetMonth(r) !== mes) return;
-        const h = mGetHr(r);
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        const h = m_hr_idx(r);
         if (h >= 0) c[h] = (c[h] || 0) + 1;
     });
-    let mx = 0, mxh = -1;
-    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; mxh = parseInt(k); } });
-    const top3 = Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    return { peak: mxh, count: mx, top3 };
+    let mx = 0, h_idx = -1;
+    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; h_idx = parseInt(k); } });
+    const lbl = m_fltr >= 0 ? `del mes de ${m_mo[m_fltr]}` : 'histórica';
+    return h_idx >= 0 ? `La hora ${lbl} con mayor cantidad de accidentes es a las <strong>${m_fmt_hr(h_idx)}</strong> (<span class="mira-stat">${mx}</span> incidentes).` : 'No hay registros para el periodo especificado.';
 }
 
-function mCorrelacion(campo) {
-    const mc = {};
+function m_max_dia(m_fltr) {
+    const c = {};
     allReportesData.forEach(r => {
-        const m = mGetMonth(r);
-        if (m < 0) return;
-        if (!mc[m]) mc[m] = { acc: 0, val: 0 };
-        mc[m].acc++;
-        mc[m].val += campo === 'fall' ? mGetFall(r) : mGetHer(r);
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        const d = m_day_idx(r);
+        if (d >= 0) c[d] = (c[d] || 0) + 1;
     });
-    return mc;
+    let mx = 0, d_idx = -1;
+    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; d_idx = parseInt(k); } });
+    const lbl = m_fltr >= 0 ? `de ${m_mo[m_fltr]}` : 'a nivel general';
+    return d_idx >= 0 ? `El día ${lbl} con más accidentes fue el <strong>${d_idx}</strong> con <span class="mira-stat">${mx}</span> incidentes.` : 'No hay registros para el periodo especificado.';
 }
 
-function mResumen() {
-    const total = allReportesData.length;
-    let fall = 0, her = 0;
-    allReportesData.forEach(r => { fall += mGetFall(r); her += mGetHer(r); });
-    const cm = mConteoMensual();
-    const mx = mMaxFechaSiniestros();
-    const hp = mHoraPico(-1);
-    let mesMax = 0, mesMaxN = '';
-    Object.entries(cm).forEach(([k, v]) => { if (v > mesMax) { mesMax = v; mesMaxN = MESES[k]; } });
+function m_idx_acc(m_fltr) {
+    const d_set = new Set();
+    let acc = 0;
+    allReportesData.forEach(r => {
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        if (r.date) { d_set.add(r.date); acc++; }
+    });
+    const d_tot = d_set.size;
+    const lbl = m_fltr >= 0 ? `en ${m_mo[m_fltr]}` : 'global';
+    if (d_tot === 0) return `Datos insuficientes para calcular el índice ${lbl}.`;
+    const idx = (acc / d_tot).toFixed(2);
+    return `<strong>Índice de accidentes ${lbl}:</strong><br>▸ <span class="mira-stat">${idx}</span> accidentes/día (Cálculo: ${acc} siniestros en ${d_tot} días con registro).`;
+}
+
+function m_idx_vict(m_fltr, v_type) {
+    let v_tot = 0, acc = 0;
+    allReportesData.forEach(r => {
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        acc++;
+        v_tot += v_type === 'fall' ? m_fall(r) : m_her(r);
+    });
+    const lbl = m_fltr >= 0 ? `en ${m_mo[m_fltr]}` : 'global';
+    const t_lbl = v_type === 'fall' ? 'Fallecidos' : 'Heridos';
+    if (acc === 0) return `Datos insuficientes para calcular el índice ${lbl}.`;
+    const idx = (v_tot / acc).toFixed(2);
+    return `<strong>Índice de ${t_lbl} ${lbl}:</strong><br>▸ <span class="mira-stat">${idx}</span> ${t_lbl.toLowerCase()} por siniestro (Total: ${v_tot} en ${acc} accidentes).`;
+}
+
+function m_resumen() {
+    const t = allReportesData.length;
+    let f = 0, h = 0;
+    allReportesData.forEach(r => { f += m_fall(r); h += m_her(r); });
     return `<strong>📊 Resumen General de Datos</strong><br><br>` +
-        `▸ Total registros: <span class="mira-stat">${total}</span><br>` +
-        `▸ Fallecidos totales: <span class="mira-warn">${fall}</span><br>` +
-        `▸ Heridos totales: <span class="mira-stat">${her}</span><br>` +
-        `▸ Mes con más siniestros: <span class="mira-stat">${mesMaxN} (${mesMax})</span><br>` +
-        `▸ Fecha con máximo histórico: <span class="mira-stat">${mx.date} (${mx.count})</span><br>` +
-        `▸ Hora pico global: <span class="mira-stat">${hp.peak >= 0 ? mFmtHr(hp.peak) : 'N/D'} (${hp.count} inc.)</span>`;
+        `▸ Total accidentes: <span class="mira-stat">${t}</span><br>` +
+        `▸ Fallecidos totales: <span class="mira-warn">${f}</span><br>` +
+        `▸ Heridos totales: <span class="mira-stat">${h}</span><br>`;
 }
 
-/* --- NLP Processor --- */
+function m_correlacion() {
+    let f_acc = 0, f_tot = 0, h_acc = 0, h_tot = 0;
+    allReportesData.forEach(r => {
+        const f = m_fall(r);
+        const h = m_her(r);
+        if(f > 0) { f_acc++; f_tot += f; }
+        if(h > 0) { h_acc++; h_tot += h; }
+    });
+    return `<strong>🔗 Correlación de Gravedad</strong><br><br>` +
+           `▸ Accidentes con heridos: <span class="mira-stat">${h_acc}</span> (Suma total: ${h_tot})<br>` +
+           `▸ Accidentes con fallecidos: <span class="mira-warn">${f_acc}</span> (Suma total: ${f_tot})<br>`;
+}
+
+/* --- NLP Engine --- */
 function miraProc(q) {
     if (!allReportesData || allReportesData.length === 0)
-        return '<span class="mira-warn">⚠ Sin datos. Espera a que Supabase sincronice.</span>';
+        return '<span class="mira-warn">⚠ Sin datos. Sincronización pendiente con Supabase.</span>';
 
     const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const mes = mDetectMes(q);
+    const m_fltr = m_det_mo(q);
 
-    // Resumen
-    if (/resumen|general|total|overview/.test(ql)) return mResumen();
+    if (/resumen/.test(ql)) return m_resumen();
+    if (/correlacion/.test(ql)) return m_correlacion();
 
-    // Conteo mensual
-    if (/conteo|mensual|por mes|meses|cuantos/.test(ql)) {
-        const cm = mConteoMensual();
-        let out = '<strong>📅 Conteo Mensual de Siniestros</strong><br><br>';
-        Object.keys(cm).sort((a, b) => a - b).forEach(k => {
-            out += `▸ ${MESES[k]}: <span class="mira-stat">${cm[k]}</span><br>`;
-        });
-        return out;
+    if (/mes.*mayor.*accidente|mes.*mas.*accidente/.test(ql)) return m_max_mes();
+    if (/hora.*mayor.*accidente|hora.*mas.*accidente/.test(ql)) return m_max_hr(m_fltr);
+    if (/dia.*mayor.*accidente|dia.*mas.*accidente/.test(ql)) return m_max_dia(m_fltr);
+    
+    if (/indice.*accidente/.test(ql)) return m_idx_acc(m_fltr);
+    if (/indice.*herido/.test(ql)) return m_idx_vict(m_fltr, 'her');
+    if (/indice.*fallecido|indice.*muert/.test(ql)) return m_idx_vict(m_fltr, 'fall');
+
+    if (!/(accidente|herido|fallecido|muert|resumen|correlacion|indice)/.test(ql)) {
+        return `⚠ Consulta fuera de alcance (Out-of-Scope). MIRA analiza exclusivamente: <strong>hora, fecha, fallecidos y heridos</strong> registrados en Supabase.`;
     }
 
-    // Hora pico
-    if (/hora|pico|horari|recurrencia|peak/.test(ql)) {
-        const hp = mHoraPico(mes);
-        const label = mes >= 0 ? MESES[mes] : 'todos los meses';
-        let out = `<strong>🕐 Análisis Horario — ${label}</strong><br><br>`;
-        out += `▸ Hora pico: <span class="mira-stat">${hp.peak >= 0 ? mFmtHr(hp.peak) : 'N/D'}</span> (${hp.count} incidentes)<br><br>`;
-        out += `<strong>Top 3 horas:</strong><br>`;
-        hp.top3.forEach(([h, c], i) => {
-            out += `${i + 1}. ${mFmtHr(parseInt(h))} → <span class="mira-stat">${c}</span> inc.<br>`;
-        });
-        return out;
-    }
-
-    // Fecha máxima
-    if (/fecha|maximo|historico|max|record|critico|critica/.test(ql)) {
-        const mx = mMaxFechaSiniestros();
-        return `<strong>🔴 Máximo Histórico</strong><br><br>` +
-            `▸ Fecha: <span class="mira-stat">${mx.date}</span><br>` +
-            `▸ Siniestros: <span class="mira-stat">${mx.count}</span>`;
-    }
-
-    // Correlación
-    if (/correlacion|relacion|versus|vs/.test(ql)) {
-        const esFall = /fallecido|fall|muerte|fatal/.test(ql);
-        const label = esFall ? 'Fallecidos' : 'Heridos';
-        const mc = mCorrelacion(esFall ? 'fall' : 'her');
-        let out = `<strong>🔗 Correlación Accidentes vs ${label}</strong><br><br>`;
-        Object.keys(mc).sort((a, b) => a - b).forEach(k => {
-            const r = mc[k];
-            const ratio = r.acc > 0 ? (r.val / r.acc).toFixed(2) : '0';
-            out += `▸ ${MESES[k]}: ${r.acc} acc. / ${r.val} ${label.toLowerCase()} — ratio: <span class="mira-stat">${ratio}</span><br>`;
-        });
-        return out;
-    }
-
-    // Fallecidos / Heridos por mes
-    if (/fallecido|fall|muerte|herido|herid|victima/.test(ql)) {
-        const esFall = /fallecido|fall|muerte|fatal/.test(ql);
-        const label = esFall ? 'Fallecidos' : 'Heridos';
-        const mc = {};
-        allReportesData.forEach(r => {
-            const m = mGetMonth(r);
-            if (m < 0) return;
-            mc[m] = (mc[m] || 0) + (esFall ? mGetFall(r) : mGetHer(r));
-        });
-        let t = 0, out = `<strong>${esFall ? '💀' : '🏥'} ${label} por Mes</strong><br><br>`;
-        Object.keys(mc).sort((a, b) => a - b).forEach(k => { t += mc[k]; out += `▸ ${MESES[k]}: <span class="mira-stat">${mc[k]}</span><br>`; });
-        out += `<br>Total: <span class="mira-warn">${t}</span>`;
-        return out;
-    }
-
-    // Mes específico
-    if (mes >= 0) {
-        const data = allReportesData.filter(r => mGetMonth(r) === mes);
-        let fall = 0, her = 0;
-        data.forEach(r => { fall += mGetFall(r); her += mGetHer(r); });
-        const hp = mHoraPico(mes);
-        return `<strong>📅 Análisis de ${MESES[mes]}</strong><br><br>` +
-            `▸ Siniestros: <span class="mira-stat">${data.length}</span><br>` +
-            `▸ Fallecidos: <span class="mira-warn">${fall}</span><br>` +
-            `▸ Heridos: <span class="mira-stat">${her}</span><br>` +
-            `▸ Hora pico: <span class="mira-stat">${hp.peak >= 0 ? mFmtHr(hp.peak) : 'N/D'}</span>`;
-    }
-
-    // Fallback
-    return `<strong>ℹ Consultas disponibles:</strong><br><br>` +
-        `▸ "resumen general"<br>` +
-        `▸ "conteo mensual"<br>` +
-        `▸ "hora pico" / "hora pico en enero"<br>` +
-        `▸ "fecha con máximo histórico"<br>` +
-        `▸ "correlación heridos"<br>` +
-        `▸ "fallecidos por mes"<br>` +
-        `▸ Nombre de un mes (ej: "marzo")`;
+    return `Sintaxis no reconocida. Consultas soportadas:<br>` +
+           `▸ "Cual es el mes con mayor cantidad de accidentes"<br>` +
+           `▸ "Hora del mes de abril con mayor cantidad de accidentes"<br>` +
+           `▸ "Dia de mayo con mas accidentes"<br>` +
+           `▸ "Indice de accidentes en junio"<br>` +
+           `▸ "Indices de fallecidos"`;
 }
