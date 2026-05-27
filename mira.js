@@ -47,16 +47,26 @@ async function miraSend() {
             body: JSON.stringify({ query: q, context: dataSample })
         });
 
-        if (!response.ok) throw new Error("API_LIMIT_OR_ERROR");
+        if (!response.ok) {
+            throw new Error(`HTTP_ERROR_${response.status}`);
+        }
 
         const aiData = await response.json();
         m_typ_h();
         
-        if (aiData.error) throw new Error(aiData.error);
+        // Bloque de diagnóstico estructurado
+        if (!aiData.reply && aiData.error) {
+            console.error("MIRA AI Error:", aiData.error);
+            throw new Error("Backend Error: " + aiData.error);
+        } else if (!aiData.reply) {
+            console.error("Respuesta inesperada de Gemini:", aiData);
+            throw new Error("Formato de respuesta desconocido");
+        }
+
         m_msg(aiData.reply, 'bot');
 
     } catch (err) {
-        console.warn("MIRA Cloud no disponible o cuota agotada. Activando motor local determinista.", err);
+        console.warn("MIRA Cloud no disponible. Activando motor local determinista. Detalle:", err.message);
         m_typ_h();
         m_msg(miraProc(q), 'bot');
     }
