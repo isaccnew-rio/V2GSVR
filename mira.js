@@ -42,7 +42,7 @@ async function miraSend() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                'Authorization': `Bearer ${typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : ''}`
             },
             body: JSON.stringify({ query: q, context: dataSample })
         });
@@ -51,6 +51,8 @@ async function miraSend() {
 
         const aiData = await response.json();
         m_typ_h();
+        
+        if (aiData.error) throw new Error(aiData.error);
         m_msg(aiData.reply, 'bot');
 
     } catch (err) {
