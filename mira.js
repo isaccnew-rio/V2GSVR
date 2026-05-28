@@ -4,7 +4,7 @@ const m_mo_s = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov
 const g_k = 'AIzaSyAIEnAZ0fkGaQcvaxK-g_xvgn3VXZXTE-I';
 const mx_q = 50; 
 
-function t_mira() {
+function toggleMira() {
     const p = document.getElementById('miraPanel');
     const f = document.getElementById('miraFab');
     p.classList.toggle('mira-hidden');
