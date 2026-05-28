@@ -70,8 +70,11 @@ async function llm_p(q) {
     Consulta: "${q}"
     Reglas: Responde técnico, concreto, sin saludos. Usa HTML básico (<strong>, <br>) para formatear la respuesta. Si la consulta se sale del contexto vial, indícalo.`;
 
+    // Endpoint corregido para evitar errores de ruta 404
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${g_k}`;
+
     try {
-        const req = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${g_k}`, {
+        const req = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: p }] }] })
@@ -80,12 +83,16 @@ async function llm_p(q) {
         if (req.status === 429) return miraProc(q); 
 
         const j = await req.json();
-        if(j.error) throw new Error(j.error.message);
+        if (j.error) {
+            console.error("Error de la API de Gemini:", j.error.message);
+            return miraProc(q);
+        }
         
         add_q();
         let txt = j.candidates[0].content.parts[0].text;
         return txt.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
     } catch (e) {
+        console.error("Error en la conexión con la API:", e);
         return miraProc(q);
     }
 }
