@@ -1,12 +1,10 @@
 /* ============================================================
    MIRA — Modelo de Inteligencia para Registro de Accidentes
-   Estrategia Híbrida: Gemini 1.5 Flash (API) + Motor Local (Fallback)
    Acceso estricto: allReportesData (hora, date, Fallecidos, Heridos)
    ============================================================ */
 
 const m_mo = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const m_mo_s = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const MIRA_URL = 'https://pnaobmyaugbccfwwhyob.supabase.co/functions/v1/mira-ai';
 
 /* --- UI Toggle --- */
 function toggleMira() {
@@ -21,55 +19,14 @@ function miraChip(txt) {
     miraSend(); 
 }
 
-async function miraSend() {
+function miraSend() {
     const i = document.getElementById('miraInput');
     const q = i.value.trim();
     if (!q) return;
     i.value = '';
-    
     m_msg(q, 'user');
     m_typ_s();
-
-    try {
-        const dataSample = allReportesData.map(r => ({
-            hora: r.hora,
-            date: r.date,
-            Fallecidos: r.Fallecidos,
-            Heridos: r.Heridos
-        }));
-
-        const response = await fetch(MIRA_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : ''}`
-            },
-            body: JSON.stringify({ query: q, context: dataSample })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP_ERROR_${response.status}`);
-        }
-
-        const aiData = await response.json();
-        m_typ_h();
-        
-        // Bloque de diagnóstico estructurado
-        if (!aiData.reply && aiData.error) {
-            console.error("MIRA AI Error:", aiData.error);
-            throw new Error("Backend Error: " + aiData.error);
-        } else if (!aiData.reply) {
-            console.error("Respuesta inesperada de Gemini:", aiData);
-            throw new Error("Formato de respuesta desconocido");
-        }
-
-        m_msg(aiData.reply, 'bot');
-
-    } catch (err) {
-        console.warn("MIRA Cloud no disponible. Activando motor local determinista. Detalle:", err.message);
-        m_typ_h();
-        m_msg(miraProc(q), 'bot');
-    }
+    setTimeout(() => { m_typ_h(); m_msg(miraProc(q), 'bot'); }, 600);
 }
 
 function m_msg(h, w) {
@@ -97,7 +54,7 @@ function m_typ_h() {
     if (t) t.remove();
 }
 
-/* --- Parseo de Datos Locales --- */
+/* --- Parseo de Datos --- */
 function m_dt(i) {
     if (i.date && typeof i.date === 'string' && i.date.length >= 10) {
         const p = i.date.split('-');
@@ -130,7 +87,7 @@ function m_det_mo(q) {
 
 function m_fmt_hr(h) { return h < 10 ? `0${h}:00` : `${h}:00`; }
 
-/* --- Algoritmos Estadísticos Locales (Modo Fallback Resiliente) --- */
+/* --- Algoritmos de Agregación --- */
 function m_max_mes() {
     const c = {};
     allReportesData.forEach(r => { const m = m_mo_idx(r); if (m >= 0) c[m] = (c[m] || 0) + 1; });
@@ -197,7 +154,7 @@ function m_resumen() {
     const t = allReportesData.length;
     let f = 0, h = 0;
     allReportesData.forEach(r => { f += m_fall(r); h += m_her(r); });
-    return `<strong>📊 Resumen General de Datos (Modo Seguro)</strong><br><br>` +
+    return `<strong>📊 Resumen General de Datos</strong><br><br>` +
         `▸ Total accidentes: <span class="mira-stat">${t}</span><br>` +
         `▸ Fallecidos totales: <span class="mira-warn">${f}</span><br>` +
         `▸ Heridos totales: <span class="mira-stat">${h}</span><br>`;
@@ -211,13 +168,16 @@ function m_correlacion() {
         if(f > 0) { f_acc++; f_tot += f; }
         if(h > 0) { h_acc++; h_tot += h; }
     });
-    return `<strong>🔗 Correlación de Gravedad (Modo Seguro)</strong><br><br>` +
+    return `<strong>🔗 Correlación de Gravedad</strong><br><br>` +
            `▸ Accidentes con heridos: <span class="mira-stat">${h_acc}</span> (Suma total: ${h_tot})<br>` +
            `▸ Accidentes con fallecidos: <span class="mira-warn">${f_acc}</span> (Suma total: ${f_tot})<br>`;
 }
 
-/* --- NLP Engine Local --- */
+/* --- NLP Engine --- */
 function miraProc(q) {
+    if (!allReportesData || allReportesData.length === 0)
+        return '<span class="mira-warn">⚠ Sin datos. Sincronización pendiente con Supabase.</span>';
+
     const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const m_fltr = m_det_mo(q);
 
@@ -233,12 +193,13 @@ function miraProc(q) {
     if (/indice.*fallecido|indice.*muert/.test(ql)) return m_idx_vict(m_fltr, 'fall');
 
     if (!/(accidente|herido|fallecido|muert|resumen|correlacion|indice)/.test(ql)) {
-        return `⚠ El modo de Inteligencia Artificial está temporalmente saturado. Las consultas fuera de alcance matemático no se pueden procesar en modo local seguro.`;
+        return `⚠ Consulta fuera de alcance (Out-of-Scope). MIRA analiza exclusivamente: <strong>hora, fecha, fallecidos y heridos</strong> registrados en Supabase.`;
     }
 
-    return `Sintaxis matemática no reconocida en modo local. Consultas soportadas:<br>` +
+    return `Sintaxis no reconocida. Consultas soportadas:<br>` +
            `▸ "Cual es el mes con mayor cantidad de accidentes"<br>` +
            `▸ "Hora del mes de abril con mayor cantidad de accidentes"<br>` +
            `▸ "Dia de mayo con mas accidentes"<br>` +
-           `▸ "Indice de accidentes en junio"`;
+           `▸ "Indice de accidentes en junio"<br>` +
+           `▸ "Indices de fallecidos"`;
 }
