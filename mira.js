@@ -6,289 +6,199 @@
 const m_mo = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const m_mo_s = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
-const GEMINI_API_KEY = 'AIzaSyAIEnAZ0fkGaQcvaxK-g_xvgn3VXZXTE-I'; 
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 /* --- UI Toggle --- */
 function toggleMira() {
-    const panelMira = document.getElementById('miraPanel');
-    const botonFlotante = document.getElementById('miraFab');
-    panelMira.classList.toggle('mira-hidden');
-    botonFlotante.style.display = panelMira.classList.contains('mira-hidden') ? 'flex' : 'none';
+    const p = document.getElementById('miraPanel');
+    const f = document.getElementById('miraFab');
+    p.classList.toggle('mira-hidden');
+    f.style.display = p.classList.contains('mira-hidden') ? 'flex' : 'none';
 }
 
-function miraChip(textoConsulta) { 
-    document.getElementById('miraInput').value = textoConsulta; 
+function miraChip(txt) { 
+    document.getElementById('miraInput').value = txt; 
     miraSend(); 
 }
 
-async function miraSend() {
-    const inputElement = document.getElementById('miraInput');
-    const consultaUsuario = inputElement.value.trim();
-    if (!consultaUsuario) return;
-    inputElement.value = '';
-    m_msg(consultaUsuario, 'user');
+function miraSend() {
+    const i = document.getElementById('miraInput');
+    const q = i.value.trim();
+    if (!q) return;
+    i.value = '';
+    m_msg(q, 'user');
     m_typ_s();
-    
-    let respuestaFinal = await llamarApiGemini(consultaUsuario, allReportesData);
-    if (!respuestaFinal) {
-        respuestaFinal = miraProc(consultaUsuario);
-    }
-    
-    m_typ_h(); 
-    m_msg(respuestaFinal, 'bot');
+    setTimeout(() => { m_typ_h(); m_msg(miraProc(q), 'bot'); }, 600);
 }
 
-function m_msg(contenidoHTML, emisor) {
-    const contenedorMensajes = document.getElementById('miraBody');
-    const mensajeBienvenida = contenedorMensajes.querySelector('.mira-welcome');
-    if (mensajeBienvenida) mensajeBienvenida.remove();
-    const divMensaje = document.createElement('div');
-    divMensaje.className = `mira-msg mira-msg-${emisor}`;
-    divMensaje.innerHTML = `<div class="mira-bubble">${contenidoHTML}</div>`;
-    contenedorMensajes.appendChild(divMensaje);
-    contenedorMensajes.scrollTop = contenedorMensajes.scrollHeight;
+function m_msg(h, w) {
+    const b = document.getElementById('miraBody');
+    const w_el = b.querySelector('.mira-welcome');
+    if (w_el) w_el.remove();
+    const d = document.createElement('div');
+    d.className = `mira-msg mira-msg-${w}`;
+    d.innerHTML = `<div class="mira-bubble">${h}</div>`;
+    b.appendChild(d);
+    b.scrollTop = b.scrollHeight;
 }
 
 function m_typ_s() {
-    const contenedorMensajes = document.getElementById('miraBody');
-    const divTipeo = document.createElement('div');
-    divTipeo.className = 'mira-msg mira-msg-bot mira-typing-wrap';
-    divTipeo.innerHTML = '<div class="mira-typing"><span></span><span></span><span></span></div>';
-    contenedorMensajes.appendChild(divTipeo);
-    contenedorMensajes.scrollTop = contenedorMensajes.scrollHeight;
+    const b = document.getElementById('miraBody');
+    const d = document.createElement('div');
+    d.className = 'mira-msg mira-msg-bot mira-typing-wrap';
+    d.innerHTML = '<div class="mira-typing"><span></span><span></span><span></span></div>';
+    b.appendChild(d);
+    b.scrollTop = b.scrollHeight;
 }
 
 function m_typ_h() {
-    const elementoTipeo = document.querySelector('.mira-typing-wrap');
-    if (elementoTipeo) elementoTipeo.remove();
+    const t = document.querySelector('.mira-typing-wrap');
+    if (t) t.remove();
 }
 
 /* --- Parseo de Datos --- */
-function m_dt(registro) {
-    if (registro.date && typeof registro.date === 'string' && registro.date.length >= 10) {
-        const partesFecha = registro.date.split('-');
-        return new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
+function m_dt(i) {
+    if (i.date && typeof i.date === 'string' && i.date.length >= 10) {
+        const p = i.date.split('-');
+        return new Date(p[0], p[1] - 1, p[2]);
     }
     return null;
 }
 
-function m_mo_idx(registro) { 
-    const fecha = m_dt(registro); 
-    return fecha ? fecha.getMonth() : -1; 
+function m_mo_idx(i) { const d = m_dt(i); return d ? d.getMonth() : -1; }
+function m_hr_idx(i) { return i.hora ? parseInt(i.hora.toString().split(':')[0], 10) : -1; }
+function m_day_idx(i) { const d = m_dt(i); return d ? d.getDate() : -1; }
+
+function m_fall(i) { 
+    const v = i.Fallecidos; 
+    return (v === 'NULL' || v === null || v === undefined) ? 0 : parseInt(v); 
 }
 
-function m_hr_idx(registro) { 
-    return registro.hora ? parseInt(registro.hora.toString().split(':')[0], 10) : -1; 
+function m_her(i) { 
+    const v = i.Heridos; 
+    return (v === 'NULL' || v === null || v === undefined) ? 0 : parseInt(v); 
 }
 
-function m_day_idx(registro) { 
-    const fecha = m_dt(registro); 
-    return fecha ? fecha.getDate() : -1; 
-}
-
-function m_fall(registro) { 
-    const valorFallecidos = registro.Fallecidos; 
-    return (valorFallecidos === 'NULL' || valorFallecidos === null || valorFallecidos === undefined) ? 0 : parseInt(valorFallecidos); 
-}
-
-function m_her(registro) { 
-    const valorHeridos = registro.Heridos; 
-    return (valorHeridos === 'NULL' || valorHeridos === null || valorHeridos === undefined) ? 0 : parseInt(valorHeridos); 
-}
-
-function m_det_mo(consulta) {
-    const consultaLimpia = consulta.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    for (let indice = 0; indice < m_mo.length; indice++) {
-        if (consultaLimpia.includes(m_mo[indice]) || consultaLimpia.includes(m_mo_s[indice])) return indice;
+function m_det_mo(q) {
+    const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (let i = 0; i < m_mo.length; i++) {
+        if (ql.includes(m_mo[i]) || ql.includes(m_mo_s[i])) return i;
     }
     return -1;
 }
 
-function m_fmt_hr(horaEntera) { 
-    return horaEntera < 10 ? `0${horaEntera}:00` : `${horaEntera}:00`; 
-}
+function m_fmt_hr(h) { return h < 10 ? `0${h}:00` : `${h}:00`; }
 
 /* --- Algoritmos de Agregación --- */
 function m_max_mes() {
-    const conteoMeses = {};
-    allReportesData.forEach(registro => { 
-        const indiceMes = m_mo_idx(registro); 
-        if (indiceMes >= 0) conteoMeses[indiceMes] = (conteoMeses[indiceMes] || 0) + 1; 
-    });
-    let maximoIncidentes = 0, indiceMesMaximo = -1;
-    Object.entries(conteoMeses).forEach(([clave, valor]) => { 
-        if (valor > maximoIncidentes) { maximoIncidentes = valor; indiceMesMaximo = parseInt(clave); } 
-    });
-    return indiceMesMaximo >= 0 ? `El mes con mayor cantidad de accidentes es <strong>${m_mo[indiceMesMaximo]}</strong> con <span class="mira-stat">${maximoIncidentes}</span> siniestros.` : 'Datos insuficientes.';
+    const c = {};
+    allReportesData.forEach(r => { const m = m_mo_idx(r); if (m >= 0) c[m] = (c[m] || 0) + 1; });
+    let mx = 0, m_idx = -1;
+    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; m_idx = parseInt(k); } });
+    return m_idx >= 0 ? `El mes con mayor cantidad de accidentes es <strong>${m_mo[m_idx]}</strong> con <span class="mira-stat">${mx}</span> siniestros.` : 'Datos insuficientes.';
 }
 
-function m_max_hr(filtroMes) {
-    const conteoHoras = {};
-    allReportesData.forEach(registro => {
-        if (filtroMes >= 0 && m_mo_idx(registro) !== filtroMes) return;
-        const indiceHora = m_hr_idx(registro);
-        if (indiceHora >= 0) conteoHoras[indiceHora] = (conteoHoras[indiceHora] || 0) + 1;
+function m_max_hr(m_fltr) {
+    const c = {};
+    allReportesData.forEach(r => {
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        const h = m_hr_idx(r);
+        if (h >= 0) c[h] = (c[h] || 0) + 1;
     });
-    let maximoIncidentes = 0, indiceHoraMaximo = -1;
-    Object.entries(conteoHoras).forEach(([clave, valor]) => { 
-        if (valor > maximoIncidentes) { maximoIncidentes = valor; indiceHoraMaximo = parseInt(clave); } 
-    });
-    const etiquetaMes = filtroMes >= 0 ? `del mes de ${m_mo[filtroMes]}` : 'histórica';
-    return indiceHoraMaximo >= 0 ? `La hora ${etiquetaMes} con mayor cantidad de accidentes es a las <strong>${m_fmt_hr(indiceHoraMaximo)}</strong> (<span class="mira-stat">${maximoIncidentes}</span> incidentes).` : 'No hay registros para el periodo especificado.';
+    let mx = 0, h_idx = -1;
+    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; h_idx = parseInt(k); } });
+    const lbl = m_fltr >= 0 ? `del mes de ${m_mo[m_fltr]}` : 'histórica';
+    return h_idx >= 0 ? `La hora ${lbl} con mayor cantidad de accidentes es a las <strong>${m_fmt_hr(h_idx)}</strong> (<span class="mira-stat">${mx}</span> incidentes).` : 'No hay registros para el periodo especificado.';
 }
 
-function m_max_dia(filtroMes) {
-    const conteoDias = {};
-    allReportesData.forEach(registro => {
-        if (filtroMes >= 0 && m_mo_idx(registro) !== filtroMes) return;
-        const indiceDia = m_day_idx(registro);
-        if (indiceDia >= 0) conteoDias[indiceDia] = (conteoDias[indiceDia] || 0) + 1;
+function m_max_dia(m_fltr) {
+    const c = {};
+    allReportesData.forEach(r => {
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        const d = m_day_idx(r);
+        if (d >= 0) c[d] = (c[d] || 0) + 1;
     });
-    let maximoIncidentes = 0, indiceDiaMaximo = -1;
-    Object.entries(conteoDias).forEach(([clave, valor]) => { 
-        if (valor > maximoIncidentes) { maximoIncidentes = valor; indiceDiaMaximo = parseInt(clave); } 
-    });
-    const etiquetaMes = filtroMes >= 0 ? `de ${m_mo[filtroMes]}` : 'a nivel general';
-    return indiceDiaMaximo >= 0 ? `El día ${etiquetaMes} con más accidentes fue el <strong>${indiceDiaMaximo}</strong> con <span class="mira-stat">${maximoIncidentes}</span> incidentes.` : 'No hay registros para el periodo especificado.';
+    let mx = 0, d_idx = -1;
+    Object.entries(c).forEach(([k, v]) => { if (v > mx) { mx = v; d_idx = parseInt(k); } });
+    const lbl = m_fltr >= 0 ? `de ${m_mo[m_fltr]}` : 'a nivel general';
+    return d_idx >= 0 ? `El día ${lbl} con más accidentes fue el <strong>${d_idx}</strong> con <span class="mira-stat">${mx}</span> incidentes.` : 'No hay registros para el periodo especificado.';
 }
 
-function calcularRangoHorario(filtroMes) {
-    let incidentesManana = 0, incidentesTarde = 0, incidentesNoche = 0;
-    allReportesData.forEach(registro => {
-        if (filtroMes >= 0 && m_mo_idx(registro) !== filtroMes) return;
-        const indiceHora = m_hr_idx(registro);
-        if (indiceHora >= 0) {
-            if (indiceHora >= 6 && indiceHora < 12) incidentesManana++;
-            else if (indiceHora >= 12 && indiceHora < 19) incidentesTarde++;
-            else incidentesNoche++;
-        }
+function m_idx_acc(m_fltr) {
+    const d_set = new Set();
+    let acc = 0;
+    allReportesData.forEach(r => {
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        if (r.date) { d_set.add(r.date); acc++; }
     });
-    const etiquetaMes = filtroMes >= 0 ? `en <strong>${m_mo[filtroMes]}</strong>` : 'a nivel general';
-    return `Distribución de accidentes ${etiquetaMes}:<br><br>` +
-           `▸ Mañana (06:00-11:59): <span class="mira-stat">${incidentesManana}</span><br>` +
-           `▸ Tarde (12:00-18:59): <span class="mira-stat">${incidentesTarde}</span><br>` +
-           `▸ Noche (19:00-05:59): <span class="mira-stat">${incidentesNoche}</span>`;
+    const d_tot = d_set.size;
+    const lbl = m_fltr >= 0 ? `en ${m_mo[m_fltr]}` : 'global';
+    if (d_tot === 0) return `Datos insuficientes para calcular el índice ${lbl}.`;
+    const idx = (acc / d_tot).toFixed(2);
+    return `<strong>Índice de accidentes ${lbl}:</strong><br>▸ <span class="mira-stat">${idx}</span> accidentes/día (Cálculo: ${acc} siniestros en ${d_tot} días con registro).`;
 }
 
-function m_idx_acc(filtroMes) {
-    const setDiasUnicos = new Set();
-    let totalAccidentesAcumulados = 0;
-    allReportesData.forEach(registro => {
-        if (filtroMes >= 0 && m_mo_idx(registro) !== filtroMes) return;
-        if (registro.date) { setDiasUnicos.add(registro.date); totalAccidentesAcumulados++; }
+function m_idx_vict(m_fltr, v_type) {
+    let v_tot = 0, acc = 0;
+    allReportesData.forEach(r => {
+        if (m_fltr >= 0 && m_mo_idx(r) !== m_fltr) return;
+        acc++;
+        v_tot += v_type === 'fall' ? m_fall(r) : m_her(r);
     });
-    const totalDiasRegistrados = setDiasUnicos.size;
-    const etiquetaMes = filtroMes >= 0 ? `en ${m_mo[filtroMes]}` : 'global';
-    if (totalDiasRegistrados === 0) return `Datos insuficientes para calcular el índice ${etiquetaMes}.`;
-    const indiceAccidentabilidad = (totalAccidentesAcumulados / totalDiasRegistrados).toFixed(2);
-    return `<strong>Índice de accidentes ${etiquetaMes}:</strong><br>▸ <span class="mira-stat">${indiceAccidentabilidad}</span> accidentes/día (Cálculo: ${totalAccidentesAcumulados} siniestros en ${totalDiasRegistrados} días con registro).`;
-}
-
-function m_idx_vict(filtroMes, tipoVictima) {
-    let totalVictimasAcumuladas = 0, totalAccidentesAcumulados = 0;
-    allReportesData.forEach(registro => {
-        if (filtroMes >= 0 && m_mo_idx(registro) !== filtroMes) return;
-        totalAccidentesAcumulados++;
-        totalVictimasAcumuladas += tipoVictima === 'fall' ? m_fall(registro) : m_her(registro);
-    });
-    const etiquetaMes = filtroMes >= 0 ? `en ${m_mo[filtroMes]}` : 'global';
-    const etiquetaTipoVictima = tipoVictima === 'fall' ? 'Fallecidos' : 'Heridos';
-    if (totalAccidentesAcumulados === 0) return `Datos insuficientes para calcular el índice ${etiquetaMes}.`;
-    const indiceVictimas = (totalVictimasAcumuladas / totalAccidentesAcumulados).toFixed(2);
-    return `<strong>Índice de ${etiquetaTipoVictima} ${etiquetaMes}:</strong><br>▸ <span class="mira-stat">${indiceVictimas}</span> ${etiquetaTipoVictima.toLowerCase()} por siniestro (Total: ${totalVictimasAcumuladas} en ${totalAccidentesAcumulados} accidentes).`;
+    const lbl = m_fltr >= 0 ? `en ${m_mo[m_fltr]}` : 'global';
+    const t_lbl = v_type === 'fall' ? 'Fallecidos' : 'Heridos';
+    if (acc === 0) return `Datos insuficientes para calcular el índice ${lbl}.`;
+    const idx = (v_tot / acc).toFixed(2);
+    return `<strong>Índice de ${t_lbl} ${lbl}:</strong><br>▸ <span class="mira-stat">${idx}</span> ${t_lbl.toLowerCase()} por siniestro (Total: ${v_tot} en ${acc} accidentes).`;
 }
 
 function m_resumen() {
-    const totalRegistrosSistema = allReportesData.length;
-    let totalFallecidosSistema = 0, totalHeridosSistema = 0;
-    allReportesData.forEach(registro => { 
-        totalFallecidosSistema += m_fall(registro); 
-        totalHeridosSistema += m_her(registro); 
-    });
+    const t = allReportesData.length;
+    let f = 0, h = 0;
+    allReportesData.forEach(r => { f += m_fall(r); h += m_her(r); });
     return `<strong>📊 Resumen General de Datos</strong><br><br>` +
-        `▸ Total accidentes: <span class="mira-stat">${totalRegistrosSistema}</span><br>` +
-        `▸ Fallecidos totales: <span class="mira-warn">${totalFallecidosSistema}</span><br>` +
-        `▸ Heridos totales: <span class="mira-stat">${totalHeridosSistema}</span><br>`;
+        `▸ Total accidentes: <span class="mira-stat">${t}</span><br>` +
+        `▸ Fallecidos totales: <span class="mira-warn">${f}</span><br>` +
+        `▸ Heridos totales: <span class="mira-stat">${h}</span><br>`;
 }
 
 function m_correlacion() {
-    let incidentesConFallecidos = 0, sumaTotalFallecidos = 0, incidentesConHeridos = 0, sumaTotalHeridos = 0;
-    allReportesData.forEach(registro => {
-        const fallecidosActuales = m_fall(registro);
-        const heridosActuales = m_her(registro);
-        if(fallecidosActuales > 0) { incidentesConFallecidos++; sumaTotalFallecidos += fallecidosActuales; }
-        if(heridosActuales > 0) { incidentesConHeridos++; sumaTotalHeridos += heridosActuales; }
+    let f_acc = 0, f_tot = 0, h_acc = 0, h_tot = 0;
+    allReportesData.forEach(r => {
+        const f = m_fall(r);
+        const h = m_her(r);
+        if(f > 0) { f_acc++; f_tot += f; }
+        if(h > 0) { h_acc++; h_tot += h; }
     });
     return `<strong>🔗 Correlación de Gravedad</strong><br><br>` +
-           `▸ Accidentes con heridos: <span class="mira-stat">${incidentesConHeridos}</span> (Suma total: ${sumaTotalHeridos})<br>` +
-           `▸ Accidentes con fallecidos: <span class="mira-warn">${incidentesConFallecidos}</span> (Suma total: ${sumaTotalFallecidos})<br>`;
+           `▸ Accidentes con heridos: <span class="mira-stat">${h_acc}</span> (Suma total: ${h_tot})<br>` +
+           `▸ Accidentes con fallecidos: <span class="mira-warn">${f_acc}</span> (Suma total: ${f_tot})<br>`;
 }
 
-/* --- API Gemini --- */
-async function llamarApiGemini(consultaUsuario, datosContexto) {
-    try {
-        if (!datosContexto || datosContexto.length === 0) return null;
-        
-        const datosMinimizados = datosContexto.map(registro => ({ 
-            mes: m_mo_idx(registro), 
-            hora: m_hr_idx(registro), 
-            fallecidos: m_fall(registro), 
-            heridos: m_her(registro) 
-        }));
-
-        const respuestaPeticionRed = await fetch(GEMINI_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ 
-                    parts: [{ 
-                        text: `Rol: Analista SIG. Datos enviados: ${JSON.stringify(datosMinimizados)}. Responde brevemente y con datos exactos a: ${consultaUsuario}` 
-                    }] 
-                }]
-            })
-        });
-
-        if (!respuestaPeticionRed.ok) throw new Error('Fallo en la respuesta de la API Gemini');
-        
-        const respuestaJson = await respuestaPeticionRed.json();
-        let textoGenerado = respuestaJson.candidates[0].content.parts[0].text;
-        
-        return textoGenerado
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-
-    } catch (errorPeticion) {
-        console.warn("Fallo API Gemini. Activando contingencia local MIRA.", errorPeticion);
-        return null;
-    }
-}
-
-/* --- NLP Engine Local --- */
-function miraProc(consultaUsuario) {
+/* --- NLP Engine --- */
+function miraProc(q) {
     if (!allReportesData || allReportesData.length === 0)
         return '<span class="mira-warn">⚠ Sin datos. Sincronización pendiente con Supabase.</span>';
 
-    const consultaLimpia = consultaUsuario.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const filtroMes = m_det_mo(consultaUsuario);
+    const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const m_fltr = m_det_mo(q);
 
-    if (/resumen/.test(consultaLimpia)) return m_resumen();
-    if (/correlacion/.test(consultaLimpia)) return m_correlacion();
+    if (/resumen/.test(ql)) return m_resumen();
+    if (/correlacion/.test(ql)) return m_correlacion();
 
-    if (/(manana|tarde|noche|madrugada)/.test(consultaLimpia)) return calcularRangoHorario(filtroMes);
-
-    if (/hora.*mas.*accidente/.test(consultaLimpia)) return m_max_hr(filtroMes);
-    if (/dia.*mas.*accidente/.test(consultaLimpia)) return m_max_dia(filtroMes);
-    if (/mas.*accidente/.test(consultaLimpia)) return m_max_mes();
+    if (/mes.*mayor.*accidente|mes.*mas.*accidente/.test(ql)) return m_max_mes();
+    if (/hora.*mayor.*accidente|hora.*mas.*accidente/.test(ql)) return m_max_hr(m_fltr);
+    if (/dia.*mayor.*accidente|dia.*mas.*accidente/.test(ql)) return m_max_dia(m_fltr);
     
-    if (/indice.*accidente/.test(consultaLimpia)) return m_idx_acc(filtroMes);
-    if (/indice.*herido/.test(consultaLimpia)) return m_idx_vict(filtroMes, 'her');
-    if (/indice.*fallecido|indice.*muert/.test(consultaLimpia)) return m_idx_vict(filtroMes, 'fall');
+    if (/indice.*accidente/.test(ql)) return m_idx_acc(m_fltr);
+    if (/indice.*herido/.test(ql)) return m_idx_vict(m_fltr, 'her');
+    if (/indice.*fallecido|indice.*muert/.test(ql)) return m_idx_vict(m_fltr, 'fall');
 
-    return `Sintaxis no reconocida por contingencia local. Consultas soportadas:<br>` +
-           `▸ "Mes con mayor cantidad de accidentes"<br>` +
-           `▸ "Accidentes en febrero en la mañana o tarde"<br>` +
+    if (!/(accidente|herido|fallecido|muert|resumen|correlacion|indice)/.test(ql)) {
+        return `⚠ Consulta fuera de alcance (Out-of-Scope). MIRA analiza exclusivamente: <strong>hora, fecha, fallecidos y heridos</strong> registrados en Supabase.`;
+    }
+
+    return `Sintaxis no reconocida. Consultas soportadas:<br>` +
+           `▸ "Cual es el mes con mayor cantidad de accidentes"<br>` +
+           `▸ "Hora del mes de abril con mayor cantidad de accidentes"<br>` +
            `▸ "Dia de mayo con mas accidentes"<br>` +
            `▸ "Indice de accidentes en junio"<br>` +
            `▸ "Indices de fallecidos"`;
