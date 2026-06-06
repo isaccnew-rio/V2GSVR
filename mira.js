@@ -1,12 +1,10 @@
 /* ============================================================
    MIRA — Modelo de Inteligencia para Registro de Accidentes
-   Acceso estricto: allReportesData (hora, date, Fallecidos, Heridos, descripcion)
+   Acceso estricto: allReportesData (hora, date, Fallecidos, Heridos)
    ============================================================ */
 
 const m_mo = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const m_mo_s = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-
-const ds_ak = 'sk-3155da9139b14cbc9625e3319a7e1486';
 
 /* --- UI Toggle --- */
 function toggleMira() {
@@ -21,55 +19,14 @@ function miraChip(txt) {
     miraSend(); 
 }
 
-async function miraSend() {
+function miraSend() {
     const i = document.getElementById('miraInput');
     const q = i.value.trim();
     if (!q) return;
     i.value = '';
     m_msg(q, 'user');
     m_typ_s();
-
-    try {
-        const d_flt = allReportesData.map(r => ({
-            dt: r.date || '',
-            hr: r.hora || '',
-            f: m_fall(r),
-            h: m_her(r),
-            d: r.descripcion || ''
-        }));
-
-        const sys_p = `Eres MIRA. Responde a la consulta basándote ÚNICA Y EXCLUSIVAMENTE en este JSON de accidentes: ${JSON.stringify(d_flt)}. Los campos son dt(fecha), hr(hora), f(fallecidos), h(heridos), d(descripción). NO busques en la web. NO inventes información. Si la respuesta no está en el JSON, indica que no tienes registros. Sé concreto y estructurado.`;
-
-        const req = await fetch('https://api.deepseek.com/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ds_ak}`
-            },
-            body: JSON.stringify({
-                model: 'deepseek-chat',
-                messages: [
-                    { role: 'system', content: sys_p },
-                    { role: 'user', content: q }
-                ],
-                temperature: 0.1
-            })
-        });
-
-        if (!req.ok) throw new Error('API Exhausted or Error');
-
-        const ds_res = await req.json();
-        const txt_r = ds_res.choices[0].message.content;
-        
-        m_typ_h();
-        m_msg(txt_r, 'bot');
-
-    } catch (err) {
-        setTimeout(() => { 
-            m_typ_h(); 
-            m_msg(miraProc(q), 'bot'); 
-        }, 600);
-    }
+    setTimeout(() => { m_typ_h(); m_msg(miraProc(q), 'bot'); }, 600);
 }
 
 function m_msg(h, w) {
