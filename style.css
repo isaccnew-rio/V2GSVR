@@ -227,7 +227,10 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
     .header-badge h1 { font-size: 15px; }
     .header-badge .subtitle { font-size: 9px; }
     .basemap-control { top: 70px; left: 15px; }
-    .panel-toggle { top: auto; bottom: 20px; right: 15px; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); background: var(--rio-blue); color: white; border: none; z-index: 2010; }
+    
+    /* MODIFICACIÓN: Ajuste de posición (bottom) para alinearlo con MIRA (bottom: 80px) */
+    .panel-toggle { top: auto; bottom: 80px; right: 15px; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); background: var(--rio-blue); color: white; border: none; z-index: 2010; }
+    
     .main-panel { top: auto; bottom: 0; right: 0; left: 0; width: 100%; height: auto; max-height: 60vh; transform: translateY(110%); border-radius: 20px 20px 0 0; z-index: 2000; padding-bottom: 15px; }
     .main-panel.open { transform: translateY(0); }
     .panel-drag-handle { display: block; width: 40px; height: 5px; background: #475569; border-radius: 3px; margin: 10px auto 5px; cursor: pointer; }
