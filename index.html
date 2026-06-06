@@ -24,6 +24,26 @@
         </div>
     </div>
 
+    <!-- ============================================================ -->
+    <!-- Control de Capas Base (Nuevo)                                -->
+    <!-- ============================================================ -->
+    <div class="basemap-control">
+        <button class="basemap-toggle" onclick="toggleBasemapMenu()" aria-label="Cambiar Mapa Base">
+            <i class="fa-solid fa-layer-group"></i>
+        </button>
+        <div id="basemapMenu" class="basemap-menu">
+            <label class="basemap-option">
+                <input type="radio" name="basemap" value="voyager" checked onchange="changeBasemap(this.value)">
+                <span>Mapa Estándar</span>
+            </label>
+            <label class="basemap-option">
+                <input type="radio" name="basemap" value="satellite" onchange="changeBasemap(this.value)">
+                <span>Vista Satelital</span>
+            </label>
+        </div>
+    </div>
+    <!-- ============================================================ -->
+
     <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" aria-label="Menú">
         <i class="fa-solid fa-bars"></i>
     </button>
@@ -155,9 +175,14 @@
                         <i class="fa-solid fa-file-pdf"></i> Descargar Informe
                     </button>
                     
-                    <button type="button" class="btn-pdf" onclick="descargarGeoJSON()" style="background-color: #10b981; border-bottom: 2px solid #059669;">
-                        <i class="fa-solid fa-download"></i> Datos Abiertos (GeoJSON)
-                    </button>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="button" class="btn-pdf" onclick="descargarGeoJSON()" style="margin-top: 0; background-color: #10b981; border-bottom: 2px solid #059669; flex: 1; padding: 0 5px; font-size: 11px;">
+                            <i class="fa-solid fa-download"></i> GeoJSON
+                        </button>
+                        <button type="button" class="btn-pdf" onclick="descargarCSV()" style="margin-top: 0; background-color: #0ea5e9; border-bottom: 2px solid #0284c7; flex: 1; padding: 0 5px; font-size: 11px;">
+                            <i class="fa-solid fa-file-csv"></i> CSV
+                        </button>
+                    </div>
 
                     <div id="formStatus" class="form-status" style="display: none;"></div>
                 </form>
@@ -178,6 +203,7 @@
             <div class="mira-title">
                 <i class="fa-solid fa-robot"></i>
                 <span>MIRA</span>
+                <span class="mira-badge">IA</span>
             </div>
             <div class="mira-header-actions">
                 <button class="mira-minimize" onclick="toggleMira()" aria-label="Minimizar MIRA">
