@@ -1,13 +1,23 @@
 const SUPABASE_URL = 'https://pnaobmyaugbccfwwhyob.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuYW9ibXlhdWdiY2Nmd3doeW9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzQwMzcsImV4cCI6MjA4MzkxMDAzN30.-TwJWOKZWXNDq2u789-dRcX--yA4fWjGSgHc-Zr-ny4';
 
-// Mapa con Estilo Voyager (Claro)
+// Instancia del Mapa
 const map = L.map('map').setView([-1.6635, -78.6547], 13);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+
+// Definición de Capas Base
+const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 20
-}).addTo(map);
+});
+
+const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    maxZoom: 20
+});
+
+// Capa activa por defecto
+voyagerLayer.addTo(map);
 
 // Grupos de capas
 let perimetroLayerGroup = L.layerGroup();
@@ -39,6 +49,22 @@ function toggleDashboard() {
     } else {
         modal.style.display = 'none';
     }
+}
+
+// Funciones UI para Capa Base
+function toggleBasemapMenu() {
+    document.getElementById('basemapMenu').classList.toggle('open');
+}
+
+function changeBasemap(layerName) {
+    if (layerName === 'satellite') {
+        map.removeLayer(voyagerLayer);
+        satelliteLayer.addTo(map);
+    } else {
+        map.removeLayer(satelliteLayer);
+        voyagerLayer.addTo(map);
+    }
+    document.getElementById('basemapMenu').classList.remove('open');
 }
 
 function mostrarEstadoForm(mensaje, tipo) {
@@ -337,7 +363,6 @@ async function descargarPDF() {
     y += 5; doc.setFillColor(248, 250, 252); doc.rect(20, y, 170, 30, 'F');
     doc.setFontSize(10); doc.text(doc.splitTextToSize(document.getElementById('descripcion').value || "Sin descripción proporcionada.", 160), 25, y + 10);
 
-    // --- SECCIÓN: GUÍA PARA USO DE DATOS (NUEVO) ---
     y += 45;
     doc.setDrawColor(...colorBlue); doc.setLineWidth(0.5); doc.line(20, y, 190, y);
     y += 10; doc.setFontSize(13); doc.setTextColor(...colorBlue); doc.text("GUÍA PARA USO DE DATOS ABIERTOS", 20, y);
@@ -378,6 +403,54 @@ function descargarGeoJSON() {
     a.href = URL.createObjectURL(blob);
     a.download = `reportes_riobamba_${new Date().toISOString().split('T')[0]}.geojson`;
     a.click();
+}
+
+// -------------------------------------------------------------
+// GENERACIÓN DE CSV (DATOS ABIERTOS MULTI-FORMATO)
+// -------------------------------------------------------------
+function descargarCSV() {
+    if (allReportesData.length === 0) {
+        alert("No hay datos para descargar.");
+        return;
+    }
+
+    let headers = new Set();
+    allReportesData.forEach(item => {
+        Object.keys(item).forEach(key => {
+            if(key !== 'geom' && key !== 'geojson') headers.add(key);
+        });
+    });
+    
+    headers.add('latitud_geo');
+    headers.add('longitud_geo');
+    
+    const headersArray = Array.from(headers);
+    let csvContent = headersArray.join(',') + '\n';
+
+    allReportesData.forEach(item => {
+        const geom = parseGeom(item);
+        let row = headersArray.map(header => {
+            let val = item[header];
+            if (header === 'latitud_geo') val = geom ? geom.lat : '';
+            if (header === 'longitud_geo') val = geom ? geom.lng : '';
+            
+            if (val === null || val === undefined) return '""';
+            
+            let strVal = String(val).replace(/"/g, '""');
+            return `"${strVal}"`;
+        });
+        csvContent += row.join(',') + '\n';
+    });
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `reportes_riobamba_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 init();
