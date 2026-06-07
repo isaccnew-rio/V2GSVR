@@ -394,6 +394,330 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
 /* ============================================================ */
 
 
+/* ============================================================ */
+/* MOTOR DE ALERTAS PREVENTIVAS — Estilos                       */
+/* ============================================================ */
+
+/* ── FAB de Alarma ─────────────────────────────────────────── */
+.alarma-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    z-index: 4000;
+    background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #f97316 100%);
+    color: white;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4), 0 0 40px rgba(239, 68, 68, 0.15);
+    transition: transform 0.3s, box-shadow 0.3s, background 0.4s;
+}
+.alarma-fab:hover {
+    transform: scale(1.12);
+    box-shadow: 0 6px 30px rgba(220, 38, 38, 0.65);
+}
+
+/* Estado ACTIVO del FAB */
+.alarma-fab--activa {
+    background: linear-gradient(135deg, #166534 0%, #16a34a 50%, #4ade80 100%) !important;
+    box-shadow: 0 4px 20px rgba(22, 163, 74, 0.5), 0 0 40px rgba(74, 222, 128, 0.2) !important;
+    animation: alarmaActivaPulse 1.8s ease-in-out infinite;
+}
+@keyframes alarmaActivaPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(22, 163, 74, 0.5), 0 0 40px rgba(74, 222, 128, 0.2); }
+    50%       { box-shadow: 0 4px 30px rgba(22, 163, 74, 0.8), 0 0 60px rgba(74, 222, 128, 0.4); }
+}
+
+/* Onda pulsante del FAB */
+.alarma-fab-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(239, 68, 68, 0.55);
+    animation: alarmaPulseRing 2.2s infinite;
+    pointer-events: none;
+}
+.alarma-fab--activa .alarma-fab-pulse {
+    border-color: rgba(74, 222, 128, 0.55);
+}
+@keyframes alarmaPulseRing {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    100% { transform: scale(1.7); opacity: 0; }
+}
+
+/* Badge ON/OFF sobre el FAB */
+.alarma-fab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #1e293b;
+    color: #ef4444;
+    font-size: 8px;
+    font-weight: 800;
+    font-family: 'Montserrat', sans-serif;
+    padding: 2px 5px;
+    border-radius: 8px;
+    border: 1px solid #ef4444;
+    letter-spacing: 0.5px;
+    transition: color 0.3s, border-color 0.3s;
+}
+.alarma-fab--activa .alarma-fab-badge {
+    color: #4ade80;
+    border-color: #4ade80;
+}
+
+/* ── Section Card del Motor (panel lateral) ──────────────────── */
+.motor-alertas-card {
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 12px rgba(239, 68, 68, 0.1);
+}
+.motor-alertas-card .section-title {
+    color: #fca5a5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.motor-alertas-card .section-title i {
+    color: #ef4444;
+    font-size: 12px;
+}
+
+/* Fila de toggle del motor dentro del panel */
+.motor-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.15);
+    margin-bottom: 10px;
+}
+.motor-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+.motor-toggle-label i { color: #ef4444; font-size: 13px; }
+
+/* Toggle switch rojo para el motor */
+.toggle-wrapper--alarma input:checked ~ .toggle-switch {
+    background: #ef4444;
+    border-color: #ef4444;
+}
+.toggle-wrapper--alarma input:checked ~ .toggle-switch::after {
+    left: 18px;
+    background: white;
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+}
+
+/* Info de GPS precision */
+.motor-gps-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.motor-gps-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+#gpsAccuracyBadge {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    font-family: 'Montserrat', monospace;
+}
+
+/* Estado del motor */
+#motorAlertasStatus {
+    font-size: 10px;
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+    padding: 4px 0 2px;
+    transition: color 0.3s;
+}
+
+/* Lista de zonas (información compacta) */
+.motor-zonas-count {
+    font-size: 10px;
+    color: #64748b;
+    text-align: right;
+    margin-top: 6px;
+}
+.motor-zonas-count span {
+    color: #fca5a5;
+    font-weight: 700;
+}
+
+/* ── Overlay de Alerta de Proximidad ────────────────────────── */
+.alerta-proximidad {
+    position: fixed;
+    top: 85px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    width: min(380px, calc(100vw - 32px));
+    z-index: 9999;
+    background: rgba(15, 5, 5, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: 16px;
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        0 8px 40px rgba(239, 68, 68, 0.35),
+        0 0 80px rgba(239, 68, 68, 0.15);
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.alerta-visible {
+    opacity: 1 !important;
+    transform: translateX(-50%) translateY(0) !important;
+    pointer-events: auto !important;
+}
+.alerta-oculta {
+    opacity: 0 !important;
+    transform: translateX(-50%) translateY(-20px) !important;
+    pointer-events: none !important;
+}
+
+/* Barra de peligro superior */
+.alerta-danger-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #dc2626, #f97316, #dc2626);
+    background-size: 200% 100%;
+    animation: alertaBarScroll 1.5s linear infinite;
+}
+@keyframes alertaBarScroll {
+    0%   { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+}
+
+/* Cuerpo del overlay */
+.alerta-body {
+    padding: 16px 18px 14px;
+}
+.alerta-encabezado {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.alerta-icono {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1.5px solid rgba(239, 68, 68, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #ef4444;
+    animation: alertaIconoPulse 1.2s ease-in-out infinite;
+}
+@keyframes alertaIconoPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    50%       { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
+.alerta-textos {
+    flex: 1;
+    min-width: 0;
+}
+.alerta-titulo {
+    font-size: 11px;
+    font-weight: 800;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+}
+#alertaZonaNombre {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.3;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.alerta-cerrar {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: 0.2s;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.alerta-cerrar:hover { color: #f87171; background: rgba(239, 68, 68, 0.1); }
+
+/* Fila de distancia */
+.alerta-distancia-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.18);
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+.alerta-distancia-label {
+    font-size: 10px;
+    color: #94a3b8;
+    font-weight: 600;
+    flex: 1;
+}
+#alertaDistancia {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ef4444;
+    font-family: 'Montserrat', monospace;
+    letter-spacing: -0.5px;
+}
+.alerta-distancia-unit {
+    font-size: 11px;
+    color: #f87171;
+    font-weight: 600;
+}
+
+/* ── MÓVIL: ajuste posición del overlay ──────────────────────── */
+@media (max-width: 768px) {
+    .alerta-proximidad {
+        top: 70px;
+        width: calc(100vw - 24px);
+    }
+}
+
+/* ============================================================ */
+/* FIN — MOTOR DE ALERTAS PREVENTIVAS                           */
+/* ============================================================ */
+
+
 /* --- MÓVIL --- */
 @media (max-width: 768px) {
     .header-container { height: 60px; }
@@ -402,7 +726,7 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
     .header-badge .subtitle { font-size: 9px; }
     .basemap-control { top: 70px; left: 15px; }
     
-    /* MODIFICACIÓN: Ajuste de posición (bottom) para alinearlo con MIRA (bottom: 80px) */
+    /* MODIFICACIÓN: panel-toggle alineado con MIRA y ALARMA (bottom: 80px) */
     .panel-toggle { top: auto; bottom: 80px; right: 15px; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); background: var(--rio-blue); color: white; border: none; z-index: 2010; }
     
     .main-panel { top: auto; bottom: 0; right: 0; left: 0; width: 100%; height: auto; max-height: 60vh; transform: translateY(110%); border-radius: 20px 20px 0 0; z-index: 2000; padding-bottom: 15px; }
@@ -420,6 +744,9 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
     /* MIRA Mobile */
     .mira-fab { bottom: 80px; left: 15px; width: 48px; height: 48px; font-size: 18px; }
     .mira-container { left: 8px; right: 8px; bottom: 140px; width: auto; max-height: 55vh; }
+
+    /* ALARMA Mobile — espejo de MIRA pero a la derecha */
+    .alarma-fab { bottom: 80px; right: 15px; width: 48px; height: 48px; font-size: 18px; }
 
     /* AZ Mobile */
     .basemap-menu { width: 200px; }
