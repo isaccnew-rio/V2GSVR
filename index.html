@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Seguridad Vial Riobamba | Gestión v5 + MIRA</title>
+    <title>Seguridad Vial Riobamba | Gestión v5 + MIRA + Análisis Zonal</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -25,13 +25,14 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- Control de Capas Base (Nuevo)                                -->
+    <!-- Control de Capas Base + Herramienta de Análisis Zonal        -->
     <!-- ============================================================ -->
     <div class="basemap-control">
         <button class="basemap-toggle" onclick="toggleBasemapMenu()" aria-label="Cambiar Mapa Base">
             <i class="fa-solid fa-layer-group"></i>
         </button>
         <div id="basemapMenu" class="basemap-menu">
+            <!-- Opciones de mapa base originales -->
             <label class="basemap-option">
                 <input type="radio" name="basemap" value="voyager" checked onchange="changeBasemap(this.value)">
                 <span>Mapa Estándar</span>
@@ -40,6 +41,50 @@
                 <input type="radio" name="basemap" value="satellite" onchange="changeBasemap(this.value)">
                 <span>Vista Satelital</span>
             </label>
+
+            <!-- ============================================================ -->
+            <!-- --- ANÁLISIS ESPACIAL ZONAL --- Sección integrada en menú   -->
+            <!-- ============================================================ -->
+            <div class="az-divider"></div>
+
+            <!-- Cabecera del panel zonal (toggle desplegable) -->
+            <div class="az-header" id="azHeader" onclick="toggleAZ()">
+                <span class="az-header-title">
+                    <i class="fa-solid fa-draw-polygon"></i>
+                    Análisis Zonal
+                </span>
+                <i class="fa-solid fa-chevron-down az-chevron" id="azChevron"></i>
+            </div>
+
+            <!-- Panel colapsable de controles -->
+            <div class="az-panel" id="azPanel">
+
+                <!-- Selector de modo de análisis -->
+                <div class="az-mode-row">
+                    <button class="az-mode-btn" id="az-btn-punto" onclick="azActivarModo('punto')">
+                        <i class="fa-solid fa-location-dot"></i> Punto + Buffer
+                    </button>
+                    <button class="az-mode-btn" id="az-btn-rect" onclick="azActivarModo('rect')">
+                        <i class="fa-solid fa-vector-square"></i> Rectángulo
+                    </button>
+                </div>
+
+                <!-- Campo buffer (solo visible en modo "punto") -->
+                <div class="az-buffer-row" id="azBufferRow">
+                    <input type="number" id="azBufferInput" class="az-buffer-input"
+                        placeholder="ingrese su valor" min="50" max="10000" step="50">
+                    <span class="az-buffer-unit">metros</span>
+                </div>
+
+                <!-- Indicador de estado del modo activo -->
+                <div class="az-status" id="azStatus">Selecciona un modo de análisis</div>
+
+                <!-- Botón limpiar análisis -->
+                <button class="az-clear-btn" id="azClearBtn" onclick="azLimpiar()">
+                    <i class="fa-solid fa-trash-can"></i> Limpiar Análisis
+                </button>
+            </div>
+            <!-- ============================================================ -->
         </div>
     </div>
     <!-- ============================================================ -->
@@ -138,6 +183,33 @@
                             <div class="toggle-switch"></div>
                         </div>
                     </label>
+
+                    <!-- ============================================================ -->
+                    <!-- --- ANÁLISIS ESPACIAL ZONAL --- Capas dinámicas             -->
+                    <!-- ============================================================ -->
+                    <label class="layer-row" id="azLayerRowFiltrados" style="display:none;">
+                        <div class="layer-label">
+                            <span class="dot" style="background:#22d3ee;color:#22d3ee;"></span>
+                            <span>Zona Filtrada</span>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="azFiltradosToggle" checked>
+                            <div class="toggle-switch"></div>
+                        </div>
+                    </label>
+
+                    <label class="layer-row" id="azLayerRowKDE" style="display:none;">
+                        <div class="layer-label">
+                            <span class="dot" style="background:#f59e0b;color:#f59e0b;"></span>
+                            <span>Densidad Zonal</span>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="azKdeToggle" checked>
+                            <div class="toggle-switch"></div>
+                        </div>
+                    </label>
+                    <!-- ============================================================ -->
+
                 </div>
                 <div class="status-text" id="status">Datos sincronizados</div>
             </div>
@@ -232,14 +304,20 @@
     </div>
     <!-- ============================================================ -->
 
+    <!-- Librerías base -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+    <!-- ============================================================ -->
+    <!-- --- ANÁLISIS ESPACIAL ZONAL --- CDN Turf.js                 -->
+    <!-- ============================================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <!-- ============================================================ -->
+
     <script src="script.js"></script>
-    <script src="mira.js"></script>
+    <script src="../mira.js"></script>
 </body>
 
 </html>
