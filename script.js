@@ -845,3 +845,306 @@ function azLimpiar() {
 
 
 init();
+
+
+// ============================================================
+// MOTOR DE ALERTAS PREVENTIVAS DE PROXIMIDAD
+// Geofencing Client-Side · Radio fijo: 50 metros reales
+// Algoritmo: Fórmula de Haversine (independiente de zoom/píxeles)
+// ============================================================
+
+/**
+ * Centroides geográficos precalculados de zonas críticas de Riobamba.
+ * Fuente: análisis territorial de siniestralidad vial urbana.
+ * @type {Array<{nombre: string, lat: number, lng: number, radioMetros: number}>}
+ */
+const zonasCriticas = [
+    {
+        nombre: 'Hospital Pediátrico Alfonso Villagómez',
+        lat: -1.6645,
+        lng: -78.6532,
+        radioMetros: 50
+    },
+    {
+        nombre: 'Av. Daniel León Borja — Intersección La Prensa',
+        lat: -1.6618,
+        lng: -78.6574,
+        radioMetros: 50
+    },
+    {
+        nombre: 'Terminal Terrestre Riobamba',
+        lat: -1.6783,
+        lng: -78.6516,
+        radioMetros: 50
+    },
+    {
+        nombre: 'Av. Unidad Nacional — Cruce Av. Carlos Zambrano',
+        lat: -1.6703,
+        lng: -78.6491,
+        radioMetros: 50
+    },
+    {
+        nombre: 'Av. Leopoldo Freire — Parque La Libertad',
+        lat: -1.6665,
+        lng: -78.6448,
+        radioMetros: 50
+    },
+    {
+        nombre: 'Redondel de Bellavista',
+        lat: -1.6590,
+        lng: -78.6623,
+        radioMetros: 50
+    },
+    {
+        nombre: 'Zona Crítica — Coord. -1.668848 / -78.652185',
+        lat: -1.668848,
+        lng: -78.652185,
+        radioMetros: 50
+    }
+];
+
+// ── Estado interno del motor ──────────────────────────────────
+const motorAlertas = {
+    activo:       false,   // Motor encendido / apagado
+    watchId:      null,    // ID de navigator.geolocation.watchPosition
+    ultimaAlerta: null,    // { zonaIdx, timestamp } — throttle por zona
+    cooldownMs:   30000    // 30 s entre alertas repetidas de la MISMA zona
+};
+
+// ── Marcadores de zonas críticas en el mapa ──────────────────
+let zonasMarkers = [];
+
+// ── Fórmula de Haversine ─────────────────────────────────────
+/**
+ * Calcula la distancia en METROS entre dos pares de coordenadas geográficas
+ * usando la fórmula de Haversine. Operación matemática pura, sin dependencias
+ * externas ni relación con el zoom o píxeles del mapa.
+ *
+ * @param {number} lat1 - Latitud del punto A (grados decimales)
+ * @param {number} lon1 - Longitud del punto A (grados decimales)
+ * @param {number} lat2 - Latitud del punto B (grados decimales)
+ * @param {number} lon2 - Longitud del punto B (grados decimales)
+ * @returns {number} Distancia en metros
+ */
+function haversineMetros(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Radio medio de la Tierra en metros
+    const toRad = deg => (deg * Math.PI) / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // metros
+}
+
+// ── Verificación de proximidad ───────────────────────────────
+/**
+ * Itera sobre zonasCriticas aplicando Haversine.
+ * Si distancia ≤ radioMetros: dispara alerta visual + vibración táctil.
+ * Incorpora throttle por zona para evitar spam de alertas.
+ *
+ * @param {GeolocationCoordinates} coords
+ */
+function verificarProximidad(coords) {
+    const userLat = coords.latitude;
+    const userLng = coords.longitude;
+    const ahora   = Date.now();
+
+    for (let i = 0; i < zonasCriticas.length; i++) {
+        const zona     = zonasCriticas[i];
+        const distancia = haversineMetros(userLat, userLng, zona.lat, zona.lng);
+
+        if (distancia <= zona.radioMetros) {
+            // Throttle: no repetir alerta de la misma zona antes del cooldown
+            const enCooldown =
+                motorAlertas.ultimaAlerta &&
+                motorAlertas.ultimaAlerta.zonaIdx === i &&
+                (ahora - motorAlertas.ultimaAlerta.timestamp) < motorAlertas.cooldownMs;
+
+            if (!enCooldown) {
+                motorAlertas.ultimaAlerta = { zonaIdx: i, timestamp: ahora };
+                mostrarAlertaProximidad(zona, Math.round(distancia));
+                activarVibracionTactica();
+            }
+            return; // Alerta de zona más cercana encontrada, detener iteración
+        }
+    }
+
+    // Si el usuario ya no está en ninguna zona crítica, ocultar overlay pasivo
+    ocultarAlertaProximidadPasiva();
+}
+
+// ── Vibración táctil ─────────────────────────────────────────
+/**
+ * Activa el patrón de vibración intermitente en dispositivos compatibles.
+ * Patrón: 500ms ON · 200ms OFF · 500ms ON
+ */
+function activarVibracionTactica() {
+    if ('vibrate' in navigator) {
+        navigator.vibrate([500, 200, 500]);
+    }
+}
+
+// ── Mostrar overlay de alerta ────────────────────────────────
+/**
+ * Muestra el panel flotante de alerta de proximidad con el nombre de la zona
+ * y la distancia calculada en metros.
+ *
+ * @param {{nombre: string, lat: number, lng: number, radioMetros: number}} zona
+ * @param {number} distanciaMetros
+ */
+function mostrarAlertaProximidad(zona, distanciaMetros) {
+    const overlay = document.getElementById('alertaProximidad');
+    if (!overlay) return;
+
+    document.getElementById('alertaZonaNombre').textContent = zona.nombre;
+    document.getElementById('alertaDistancia').textContent  = `${distanciaMetros} m`;
+
+    overlay.classList.remove('alerta-oculta');
+    overlay.classList.add('alerta-visible');
+}
+
+// ── Cerrar overlay (botón ✕ o salida de zona) ────────────────
+function ocultarAlertaProximidad() {
+    const overlay = document.getElementById('alertaProximidad');
+    if (!overlay) return;
+    overlay.classList.remove('alerta-visible');
+    overlay.classList.add('alerta-oculta');
+}
+
+/**
+ * Oculta el overlay solo si el usuario sale de TODAS las zonas críticas.
+ * No resetea el cooldown para evitar falsos negativos por fluctuación GPS.
+ */
+function ocultarAlertaProximidadPasiva() {
+    const overlay = document.getElementById('alertaProximidad');
+    if (overlay && overlay.classList.contains('alerta-visible')) {
+        // No cerramos automáticamente — el usuario cierra con el botón ✕
+        // para asegurar que la alerta sea leída incluso con GPS oscilante
+    }
+}
+
+// ── Iniciar motor ────────────────────────────────────────────
+function iniciarMotorAlertas() {
+    if (!navigator.geolocation) {
+        alert('⚠️ Geolocalización no disponible en este dispositivo.');
+        return;
+    }
+
+    motorAlertas.watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            verificarProximidad(position.coords);
+            actualizarIndicadorGPS(true, position.coords.accuracy);
+        },
+        (error) => {
+            let msg = 'Error GPS';
+            if (error.code === 1) msg = 'Permiso de ubicación denegado';
+            else if (error.code === 2) msg = 'Posición no disponible';
+            else if (error.code === 3) msg = 'Tiempo de espera GPS agotado';
+            actualizarIndicadorGPS(false, null, msg);
+        },
+        {
+            enableHighAccuracy: true,   // GPS de alta precisión
+            timeout:            10000,  // Máximo 10 s por lectura
+            maximumAge:         0       // Sin caché — siempre posición fresca
+        }
+    );
+
+    motorAlertas.activo = true;
+    renderizarMarcadoresZonasCriticas();
+    actualizarUIMotor();
+}
+
+// ── Detener motor ────────────────────────────────────────────
+function detenerMotorAlertas() {
+    if (motorAlertas.watchId !== null) {
+        navigator.geolocation.clearWatch(motorAlertas.watchId);
+        motorAlertas.watchId = null;
+    }
+    motorAlertas.activo       = false;
+    motorAlertas.ultimaAlerta = null;
+
+    eliminarMarcadoresZonasCriticas();
+    ocultarAlertaProximidad();
+    actualizarIndicadorGPS(false);
+    actualizarUIMotor();
+}
+
+// ── Toggle desde botón UI ────────────────────────────────────
+function toggleMotorAlertas() {
+    if (motorAlertas.activo) {
+        detenerMotorAlertas();
+    } else {
+        iniciarMotorAlertas();
+    }
+}
+
+// ── Actualizar estado visual del botón y badge ───────────────
+function actualizarUIMotor() {
+    const fab       = document.getElementById('alarmaFab');
+    const badge     = document.getElementById('alarmaBadge');
+    const toggle    = document.getElementById('motorAlertasToggle');
+    const statusTxt = document.getElementById('motorAlertasStatus');
+
+    if (motorAlertas.activo) {
+        fab?.classList.add('alarma-fab--activa');
+        if (badge)     badge.textContent    = 'ON';
+        if (toggle)    toggle.checked       = true;
+        if (statusTxt) statusTxt.textContent = 'Motor activo — monitoreando GPS';
+        if (statusTxt) statusTxt.style.color = '#4ade80';
+    } else {
+        fab?.classList.remove('alarma-fab--activa');
+        if (badge)     badge.textContent    = 'OFF';
+        if (toggle)    toggle.checked       = false;
+        if (statusTxt) statusTxt.textContent = 'Motor detenido';
+        if (statusTxt) statusTxt.style.color = '#94a3b8';
+    }
+}
+
+// ── Indicador de precisión GPS ───────────────────────────────
+function actualizarIndicadorGPS(activo, precision, errorMsg) {
+    const el = document.getElementById('gpsAccuracyBadge');
+    if (!el) return;
+    if (!activo) {
+        el.textContent = errorMsg || '—';
+        el.style.color = errorMsg ? '#f87171' : '#64748b';
+    } else {
+        el.textContent = precision ? `±${Math.round(precision)} m` : 'Buscando...';
+        el.style.color = precision && precision <= 20 ? '#4ade80' : '#fbbf24';
+    }
+}
+
+// ── Marcadores de zonas críticas en el mapa ──────────────────
+function renderizarMarcadoresZonasCriticas() {
+    eliminarMarcadoresZonasCriticas();
+    zonasCriticas.forEach(zona => {
+        const marker = L.circleMarker([zona.lat, zona.lng], {
+            radius:      12,
+            fillColor:   '#ef4444',
+            color:       '#fca5a5',
+            weight:      2,
+            opacity:     0.9,
+            fillOpacity: 0.35
+        }).bindPopup(
+            `<div style="font-family:Montserrat,sans-serif;font-size:12px;">
+                <b style="color:#ef4444;">⚠ Zona Crítica</b><br>
+                ${zona.nombre}<br>
+                <span style="color:#94a3b8;font-size:10px;">Radio de alerta: ${zona.radioMetros} m</span>
+            </div>`
+        ).addTo(map);
+        zonasMarkers.push(marker);
+    });
+}
+
+function eliminarMarcadoresZonasCriticas() {
+    zonasMarkers.forEach(m => map.removeLayer(m));
+    zonasMarkers = [];
+}
+// ============================================================
+// FIN — MOTOR DE ALERTAS PREVENTIVAS DE PROXIMIDAD
+// ============================================================
