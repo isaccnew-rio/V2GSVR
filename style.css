@@ -746,7 +746,7 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
     .mira-container { left: 8px; right: 8px; bottom: 140px; width: auto; max-height: 55vh; }
 
     /* ALARMA Mobile — espejo de MIRA pero a la derecha */
-    .alarma-fab { bottom: 80px; right: 15px; width: 48px; height: 48px; font-size: 18px; }
+    .alarma-fab { bottom: 100px; right: 15px; width: 48px; height: 48px; font-size: 18px; }
 
     /* AZ Mobile */
     .basemap-menu { width: 200px; }
