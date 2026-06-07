@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Seguridad Vial Riobamba | Gestión v5 + MIRA + Análisis Zonal</title>
+    <title>Seguridad Vial Riobamba | Gestión v5 + MIRA + Análisis Zonal + Alertas</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -193,6 +193,49 @@
                 <div class="status-text" id="status">Datos sincronizados</div>
             </div>
 
+            <!-- ================================================ -->
+            <!-- MOTOR DE ALERTAS PREVENTIVAS — Sección del Panel -->
+            <!-- ================================================ -->
+            <div class="motor-alertas-card">
+                <div class="section-title">
+                    <i class="fa-solid fa-bell-exclamation"></i>
+                    Alertas de Proximidad
+                </div>
+
+                <!-- Toggle ON/OFF del motor -->
+                <div class="motor-toggle-row">
+                    <div class="motor-toggle-label">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Motor de Alertas
+                    </div>
+                    <label class="toggle-wrapper toggle-wrapper--alarma" id="motorAlertasToggleLabel"
+                        onclick="toggleMotorAlertas()" style="cursor:pointer;">
+                        <input type="checkbox" id="motorAlertasToggle" readonly>
+                        <div class="toggle-switch"></div>
+                    </label>
+                </div>
+
+                <!-- Precisión GPS en tiempo real -->
+                <div class="motor-gps-row">
+                    <span class="motor-gps-label">
+                        <i class="fa-solid fa-satellite-dish" style="color:#3b82f6;font-size:9px;"></i>
+                        Precisión GPS
+                    </span>
+                    <span id="gpsAccuracyBadge">—</span>
+                </div>
+
+                <!-- Estado textual del motor -->
+                <div id="motorAlertasStatus">Motor detenido</div>
+
+                <!-- Contador de zonas vigiladas -->
+                <div class="motor-zonas-count">
+                    Vigilando <span id="zonasCount">7</span> zonas críticas · Radio 50 m
+                </div>
+            </div>
+            <!-- ================================================ -->
+            <!-- FIN — MOTOR DE ALERTAS PREVENTIVAS               -->
+            <!-- ================================================ -->
+
             <div class="section-card">
                 <div class="section-title">Nuevo Reporte</div>
                 <form id="reportForm" autocomplete="off">
@@ -241,10 +284,54 @@
         </div>
     </div>
 
+    <!-- ================================================ -->
+    <!-- FAB Agente MIRA (izquierda)                      -->
+    <!-- ================================================ -->
     <button class="mira-fab" id="miraFab" onclick="toggleMira()" aria-label="Agente MIRA">
         <i class="fa-solid fa-robot"></i>
         <span class="mira-fab-pulse"></span>
     </button>
+
+    <!-- ================================================ -->
+    <!-- FAB Motor de Alertas (derecha, espejo de MIRA)   -->
+    <!-- ================================================ -->
+    <button class="alarma-fab" id="alarmaFab" onclick="toggleMotorAlertas()"
+        aria-label="Motor de Alertas Preventivas">
+        <i class="fa-solid fa-bell-exclamation"></i>
+        <span class="alarma-fab-pulse"></span>
+        <span class="alarma-fab-badge" id="alarmaBadge">OFF</span>
+    </button>
+
+    <!-- ================================================ -->
+    <!-- OVERLAY de ALERTA DE PROXIMIDAD                  -->
+    <!-- ================================================ -->
+    <div class="alerta-proximidad alerta-oculta" id="alertaProximidad" role="alert" aria-live="assertive">
+        <div class="alerta-danger-bar"></div>
+        <div class="alerta-body">
+            <div class="alerta-encabezado">
+                <div class="alerta-icono">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="alerta-textos">
+                    <div class="alerta-titulo">⚠ Zona Crítica Detectada</div>
+                    <span id="alertaZonaNombre">—</span>
+                </div>
+                <button class="alerta-cerrar" onclick="ocultarAlertaProximidad()"
+                    aria-label="Cerrar alerta">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="alerta-distancia-row">
+                <span class="alerta-distancia-label">
+                    <i class="fa-solid fa-ruler" style="color:#ef4444;margin-right:4px;"></i>
+                    Distancia al centroide
+                </span>
+                <span id="alertaDistancia">—</span>
+                <span class="alerta-distancia-unit">metros</span>
+            </div>
+        </div>
+    </div>
+    <!-- ================================================ -->
 
     <div class="mira-container mira-hidden" id="miraPanel">
         <div class="mira-header">
