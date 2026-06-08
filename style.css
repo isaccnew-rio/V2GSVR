@@ -398,81 +398,6 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
 /* MOTOR DE ALERTAS PREVENTIVAS — Estilos                       */
 /* ============================================================ */
 
-/* ── FAB de Alarma ─────────────────────────────────────────── */
-.alarma-fab {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    z-index: 4000;
-    background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #f97316 100%);
-    color: white;
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4), 0 0 40px rgba(239, 68, 68, 0.15);
-    transition: transform 0.3s, box-shadow 0.3s, background 0.4s;
-}
-.alarma-fab:hover {
-    transform: scale(1.12);
-    box-shadow: 0 6px 30px rgba(220, 38, 38, 0.65);
-}
-
-/* Estado ACTIVO del FAB */
-.alarma-fab--activa {
-    background: linear-gradient(135deg, #166534 0%, #16a34a 50%, #4ade80 100%) !important;
-    box-shadow: 0 4px 20px rgba(22, 163, 74, 0.5), 0 0 40px rgba(74, 222, 128, 0.2) !important;
-    animation: alarmaActivaPulse 1.8s ease-in-out infinite;
-}
-@keyframes alarmaActivaPulse {
-    0%, 100% { box-shadow: 0 4px 20px rgba(22, 163, 74, 0.5), 0 0 40px rgba(74, 222, 128, 0.2); }
-    50%       { box-shadow: 0 4px 30px rgba(22, 163, 74, 0.8), 0 0 60px rgba(74, 222, 128, 0.4); }
-}
-
-/* Onda pulsante del FAB */
-.alarma-fab-pulse {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px solid rgba(239, 68, 68, 0.55);
-    animation: alarmaPulseRing 2.2s infinite;
-    pointer-events: none;
-}
-.alarma-fab--activa .alarma-fab-pulse {
-    border-color: rgba(74, 222, 128, 0.55);
-}
-@keyframes alarmaPulseRing {
-    0%   { transform: scale(1);   opacity: 0.7; }
-    100% { transform: scale(1.7); opacity: 0; }
-}
-
-/* Badge ON/OFF sobre el FAB */
-.alarma-fab-badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    background: #1e293b;
-    color: #ef4444;
-    font-size: 8px;
-    font-weight: 800;
-    font-family: 'Montserrat', sans-serif;
-    padding: 2px 5px;
-    border-radius: 8px;
-    border: 1px solid #ef4444;
-    letter-spacing: 0.5px;
-    transition: color 0.3s, border-color 0.3s;
-}
-.alarma-fab--activa .alarma-fab-badge {
-    color: #4ade80;
-    border-color: #4ade80;
-}
-
 /* ── Section Card del Motor (panel lateral) ──────────────────── */
 .motor-alertas-card {
     background: rgba(30, 41, 59, 0.9);
@@ -744,9 +669,6 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
     /* MIRA Mobile */
     .mira-fab { bottom: 80px; left: 15px; width: 48px; height: 48px; font-size: 18px; }
     .mira-container { left: 8px; right: 8px; bottom: 140px; width: auto; max-height: 55vh; }
-
-    /* ALARMA Mobile — espejo de MIRA pero a la derecha */
-    .alarma-fab { bottom: 145px; right: 15px; width: 48px; height: 48px; font-size: 18px; }
 
     /* AZ Mobile */
     .basemap-menu { width: 200px; }
