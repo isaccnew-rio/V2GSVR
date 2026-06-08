@@ -860,46 +860,34 @@ init();
  */
 const zonasCriticas = [
     {
-        nombre: 'Hospital Pediátrico Alfonso Villagómez',
-        lat: -1.6645,
-        lng: -78.6532,
-        radioMetros: 50
+        nombre: 'Zona cerca del Hospital San Juan',
+        lat: -1.662198,
+        lng: -78.658870,
+        radioMetros: 100
     },
     {
-        nombre: 'Av. Daniel León Borja — Intersección La Prensa',
-        lat: -1.6618,
-        lng: -78.6574,
-        radioMetros: 50
+        nombre: 'Zona cerca del Redondel del Comil',
+        lat: -1.665350,
+        lng: -78.649496,
+        radioMetros: 100
     },
     {
-        nombre: 'Terminal Terrestre Riobamba',
-        lat: -1.6783,
-        lng: -78.6516,
-        radioMetros: 50
+        nombre: 'Zona aproximada a la Prefectura de Chimborazo',
+        lat: -1.668763,
+        lng: -78.652333,
+        radioMetros: 100
     },
     {
-        nombre: 'Av. Unidad Nacional — Cruce Av. Carlos Zambrano',
-        lat: -1.6703,
-        lng: -78.6491,
-        radioMetros: 50
+        nombre: 'Zona aproximada a la Plaza Alfaro',
+        lat: -1.671071,
+        lng: -78.654227,
+        radioMetros: 100
     },
     {
-        nombre: 'Av. Leopoldo Freire — Parque La Libertad',
-        lat: -1.6665,
-        lng: -78.6448,
-        radioMetros: 50
-    },
-    {
-        nombre: 'Redondel de Bellavista',
-        lat: -1.6590,
-        lng: -78.6623,
-        radioMetros: 50
-    },
-    {
-        nombre: 'Zona Crítica — Coord. -1.668848 / -78.652185',
-        lat: -1.668848,
-        lng: -78.652185,
-        radioMetros: 50
+        nombre: 'Zona aproximada al Mercado de San Alfonso',
+        lat: -1.671138,
+        lng: -78.647331,
+        radioMetros: 100
     }
 ];
 
