@@ -1072,6 +1072,21 @@ function toggleMotorAlertas() {
     }
 }
 
+// ── Listener del checkbox del Motor de Alertas ───────────────
+(function () {
+    const chk = document.getElementById('motorAlertasToggle');
+    if (chk) {
+        chk.addEventListener('change', function () {
+            // Sincronizar: si el checkbox cambió a un estado distinto al motor, actuar
+            if (chk.checked && !motorAlertas.activo) {
+                iniciarMotorAlertas();
+            } else if (!chk.checked && motorAlertas.activo) {
+                detenerMotorAlertas();
+            }
+        });
+    }
+})();
+
 // ── Actualizar estado visual del toggle y status del panel ───
 function actualizarUIMotor() {
     const toggle    = document.getElementById('motorAlertasToggle');
