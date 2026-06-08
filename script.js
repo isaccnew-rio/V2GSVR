@@ -1072,22 +1072,16 @@ function toggleMotorAlertas() {
     }
 }
 
-// ── Actualizar estado visual del botón y badge ───────────────
+// ── Actualizar estado visual del toggle y status del panel ───
 function actualizarUIMotor() {
-    const fab       = document.getElementById('alarmaFab');
-    const badge     = document.getElementById('alarmaBadge');
     const toggle    = document.getElementById('motorAlertasToggle');
     const statusTxt = document.getElementById('motorAlertasStatus');
 
     if (motorAlertas.activo) {
-        fab?.classList.add('alarma-fab--activa');
-        if (badge)     badge.textContent    = 'ON';
         if (toggle)    toggle.checked       = true;
         if (statusTxt) statusTxt.textContent = 'Motor activo — monitoreando GPS';
         if (statusTxt) statusTxt.style.color = '#4ade80';
     } else {
-        fab?.classList.remove('alarma-fab--activa');
-        if (badge)     badge.textContent    = 'OFF';
         if (toggle)    toggle.checked       = false;
         if (statusTxt) statusTxt.textContent = 'Motor detenido';
         if (statusTxt) statusTxt.style.color = '#94a3b8';
