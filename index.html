@@ -37,40 +37,6 @@
                 <input type="radio" name="basemap" value="satellite" onchange="changeBasemap(this.value)">
                 <span>Vista Satelital</span>
             </label>
-
-            <div class="az-divider"></div>
-
-            <div class="az-header" id="azHeader" onclick="toggleAZ()">
-                <span class="az-header-title">
-                    <i class="fa-solid fa-draw-polygon"></i>
-                    Análisis Zonal
-                </span>
-                <i class="fa-solid fa-chevron-down az-chevron" id="azChevron"></i>
-            </div>
-
-            <div class="az-panel" id="azPanel">
-
-                <div class="az-mode-row">
-                    <button class="az-mode-btn" id="az-btn-punto" onclick="azActivarModo('punto')">
-                        <i class="fa-solid fa-location-dot"></i> Punto + Buffer
-                    </button>
-                    <button class="az-mode-btn" id="az-btn-rect" onclick="azActivarModo('rect')">
-                        <i class="fa-solid fa-vector-square"></i> Rectángulo
-                    </button>
-                </div>
-
-                <div class="az-buffer-row" id="azBufferRow">
-                    <input type="number" id="azBufferInput" class="az-buffer-input"
-                        placeholder="ingrese su valor" min="50" max="10000" step="50">
-                    <span class="az-buffer-unit">metros</span>
-                </div>
-
-                <div class="az-status" id="azStatus">Selecciona un modo de análisis</div>
-
-                <button class="az-clear-btn" id="azClearBtn" onclick="azLimpiar()">
-                    <i class="fa-solid fa-trash-can"></i> Limpiar Análisis
-                </button>
-            </div>
             </div>
     </div>
     <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" aria-label="Menú">
@@ -193,48 +159,7 @@
                 <div class="status-text" id="status">Datos sincronizados</div>
             </div>
 
-            <!-- ================================================ -->
-            <!-- MOTOR DE ALERTAS PREVENTIVAS — Sección del Panel -->
-            <!-- ================================================ -->
-            <div class="motor-alertas-card">
-                <div class="section-title">
-                    <i class="fa-solid fa-bell-exclamation"></i>
-                    Alertas de Proximidad
-                </div>
 
-                <!-- Toggle ON/OFF del motor -->
-                <div class="motor-toggle-row">
-                    <div class="motor-toggle-label">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        Motor de Alertas
-                    </div>
-                    <label class="toggle-wrapper toggle-wrapper--alarma" id="motorAlertasToggleLabel"
-                        style="cursor:pointer;">
-                        <input type="checkbox" id="motorAlertasToggle">
-                        <div class="toggle-switch"></div>
-                    </label>
-                </div>
-
-                <!-- Precisión GPS en tiempo real -->
-                <div class="motor-gps-row">
-                    <span class="motor-gps-label">
-                        <i class="fa-solid fa-satellite-dish" style="color:#3b82f6;font-size:9px;"></i>
-                        Precisión GPS
-                    </span>
-                    <span id="gpsAccuracyBadge">—</span>
-                </div>
-
-                <!-- Estado textual del motor -->
-                <div id="motorAlertasStatus">Motor detenido</div>
-
-                <!-- Contador de zonas vigiladas -->
-                <div class="motor-zonas-count">
-                    Vigilando <span id="zonasCount">5</span> zonas críticas · Radio 100 m
-                </div>
-            </div>
-            <!-- ================================================ -->
-            <!-- FIN — MOTOR DE ALERTAS PREVENTIVAS               -->
-            <!-- ================================================ -->
 
             <div class="section-card">
                 <div class="section-title">Nuevo Reporte</div>
@@ -338,24 +263,116 @@
                 </button>
             </div>
         </div>
-        <div class="mira-body" id="miraBody">
-            <div class="mira-welcome">
-                <div class="mira-welcome-icon"><i class="fa-solid fa-satellite-dish"></i></div>
-                <p class="mira-welcome-title">Agente MIRA Activo</p>
-                <p class="mira-welcome-sub">Modelo de Inteligencia para Registro de Accidentes</p>
-                <div class="mira-suggestions">
-                    <button class="mira-chip" onclick="miraChip('resumen general')">📊 Resumen General</button>
-                    <button class="mira-chip" onclick="miraChip('correlación heridos')">🔗 Correlación</button>
+
+        <!-- ── Tabs de navegación ── -->
+        <div class="mira-tabs" id="miraTabs">
+            <button class="mira-tab active" id="miraTabChat" onclick="switchMiraTab('chat')">
+                <i class="fa-solid fa-comment-dots"></i> Chat
+            </button>
+            <button class="mira-tab" id="miraTabAZ" onclick="switchMiraTab('az')">
+                <i class="fa-solid fa-draw-polygon"></i> Análisis Zonal
+            </button>
+            <button class="mira-tab" id="miraTabAlertas" onclick="switchMiraTab('alertas')">
+                <i class="fa-solid fa-bell-exclamation"></i> Alertas
+            </button>
+        </div>
+
+        <!-- ── Panel: Chat ── -->
+        <div class="mira-tab-panel" id="miraTabPanelChat">
+            <div class="mira-body" id="miraBody">
+                <div class="mira-welcome">
+                    <div class="mira-welcome-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+                    <p class="mira-welcome-title">Agente MIRA Activo</p>
+                    <p class="mira-welcome-sub">Modelo de Inteligencia para Registro de Accidentes</p>
+                    <div class="mira-suggestions">
+                        <button class="mira-chip" onclick="miraChip('resumen general')">📊 Resumen General</button>
+                        <button class="mira-chip" onclick="miraChip('correlación heridos')">🔗 Correlación</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mira-input-bar">
+                <input type="text" id="miraInput" class="mira-input" placeholder="Ej: ¿Mes con mayor cantidad de accidentes?"
+                    onkeydown="if(event.key==='Enter')miraSend()" autocomplete="off">
+                <button class="mira-send" onclick="miraSend()" aria-label="Enviar consulta">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Panel: Análisis Zonal ── -->
+        <div class="mira-tab-panel mira-tab-panel--hidden" id="miraTabPanelAZ">
+            <div class="mira-body mira-body--az">
+                <div class="mira-az-header" id="azHeader" onclick="toggleAZ()">
+                    <span class="az-header-title">
+                        <i class="fa-solid fa-draw-polygon"></i>
+                        Análisis Zonal
+                    </span>
+                    <i class="fa-solid fa-chevron-down az-chevron" id="azChevron"></i>
+                </div>
+
+                <div class="az-panel open" id="azPanel">
+                    <div class="az-mode-row">
+                        <button class="az-mode-btn" id="az-btn-punto" onclick="azActivarModo('punto')">
+                            <i class="fa-solid fa-location-dot"></i> Punto + Buffer
+                        </button>
+                        <button class="az-mode-btn" id="az-btn-rect" onclick="azActivarModo('rect')">
+                            <i class="fa-solid fa-vector-square"></i> Rectángulo
+                        </button>
+                    </div>
+
+                    <div class="az-buffer-row" id="azBufferRow">
+                        <input type="number" id="azBufferInput" class="az-buffer-input"
+                            placeholder="ingrese su valor" min="50" max="10000" step="50">
+                        <span class="az-buffer-unit">metros</span>
+                    </div>
+
+                    <div class="az-status" id="azStatus">Selecciona un modo de análisis</div>
+
+                    <button class="az-clear-btn" id="azClearBtn" onclick="azLimpiar()">
+                        <i class="fa-solid fa-trash-can"></i> Limpiar Análisis
+                    </button>
                 </div>
             </div>
         </div>
-        <div class="mira-input-bar">
-            <input type="text" id="miraInput" class="mira-input" placeholder="Ej: ¿Mes con mayor cantidad de accidentes?"
-                onkeydown="if(event.key==='Enter')miraSend()" autocomplete="off">
-            <button class="mira-send" onclick="miraSend()" aria-label="Enviar consulta">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
+
+        <!-- ── Panel: Alertas de Proximidad ── -->
+        <div class="mira-tab-panel mira-tab-panel--hidden" id="miraTabPanelAlertas">
+            <div class="mira-body mira-body--alertas">
+                <div class="motor-alertas-card motor-alertas-card--mira">
+                    <div class="section-title">
+                        <i class="fa-solid fa-bell-exclamation"></i>
+                        Alertas de Proximidad
+                    </div>
+
+                    <div class="motor-toggle-row">
+                        <div class="motor-toggle-label">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            Motor de Alertas
+                        </div>
+                        <label class="toggle-wrapper toggle-wrapper--alarma" id="motorAlertasToggleLabel"
+                            style="cursor:pointer;">
+                            <input type="checkbox" id="motorAlertasToggle">
+                            <div class="toggle-switch"></div>
+                        </label>
+                    </div>
+
+                    <div class="motor-gps-row">
+                        <span class="motor-gps-label">
+                            <i class="fa-solid fa-satellite-dish" style="color:#3b82f6;font-size:9px;"></i>
+                            Precisión GPS
+                        </span>
+                        <span id="gpsAccuracyBadge">—</span>
+                    </div>
+
+                    <div id="motorAlertasStatus">Motor detenido</div>
+
+                    <div class="motor-zonas-count">
+                        Vigilando <span id="zonasCount">5</span> zonas críticas · Radio 100 m
+                    </div>
+                </div>
+            </div>
         </div>
+
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
