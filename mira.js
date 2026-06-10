@@ -14,6 +14,32 @@ function toggleMira() {
     f.style.display = p.classList.contains('mira-hidden') ? 'flex' : 'none';
 }
 
+/* --- Tab Switcher --- */
+function switchMiraTab(tab) {
+    // Panels map
+    const panels = {
+        chat:    document.getElementById('miraTabPanelChat'),
+        az:      document.getElementById('miraTabPanelAZ'),
+        alertas: document.getElementById('miraTabPanelAlertas')
+    };
+    // Tab buttons map
+    const tabs = {
+        chat:    document.getElementById('miraTabChat'),
+        az:      document.getElementById('miraTabAZ'),
+        alertas: document.getElementById('miraTabAlertas')
+    };
+    // Activate selected, hide others
+    Object.keys(panels).forEach(key => {
+        if (key === tab) {
+            panels[key].classList.remove('mira-tab-panel--hidden');
+            tabs[key].classList.add('active');
+        } else {
+            panels[key].classList.add('mira-tab-panel--hidden');
+            tabs[key].classList.remove('active');
+        }
+    });
+}
+
 function miraChip(txt) { 
     document.getElementById('miraInput').value = txt; 
     miraSend(); 
