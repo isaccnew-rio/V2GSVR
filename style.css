@@ -144,7 +144,7 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
 
 /* Panel Container */
 .mira-container {
-    position: fixed; bottom: 90px; left: 24px; width: 380px; max-height: 520px;
+    position: fixed; bottom: 90px; left: 24px; width: 380px; max-height: 580px;
     display: flex; flex-direction: column; z-index: 4001;
     background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 16px;
@@ -219,6 +219,87 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
 .mira-input::placeholder { color: #64748b; }
 .mira-send { width: 38px; height: 38px; border-radius: 8px; border: none; cursor: pointer; background: linear-gradient(135deg, #6366f1, #3b82f6); color: white; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .mira-send:hover { transform: scale(1.08); box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4); }
+
+/* ── MIRA Tabs ─────────────────────────────────────────────────── */
+.mira-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+    background: rgba(15, 23, 42, 0.4);
+    flex-shrink: 0;
+}
+.mira-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: inherit;
+    padding: 9px 4px;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s, border-bottom 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    letter-spacing: 0.2px;
+    border-bottom: 2px solid transparent;
+    text-transform: uppercase;
+}
+.mira-tab:hover { color: #a5b4fc; background: rgba(99,102,241,0.05); }
+.mira-tab.active {
+    color: #818cf8;
+    border-bottom: 2px solid #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+}
+.mira-tab i { font-size: 11px; }
+
+/* Tab panels */
+.mira-tab-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+.mira-tab-panel--hidden { display: none !important; }
+
+/* Body variants for AZ and Alertas tabs */
+.mira-body--az,
+.mira-body--alertas {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+}
+.mira-body--az::-webkit-scrollbar,
+.mira-body--alertas::-webkit-scrollbar { width: 4px; }
+.mira-body--az::-webkit-scrollbar-thumb,
+.mira-body--alertas::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+/* AZ header within MIRA panel */
+.mira-az-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 6px;
+    border-radius: 8px;
+    background: rgba(34, 211, 238, 0.05);
+    border: 1px solid rgba(34, 211, 238, 0.12);
+    margin-bottom: 12px;
+    cursor: default;
+}
+
+/* Motor de alertas inside MIRA (no outer margin) */
+.motor-alertas-card--mira {
+    margin-bottom: 0;
+    background: rgba(30, 41, 59, 0.7);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    box-shadow: 0 2px 12px rgba(239, 68, 68, 0.08);
+}
 
 
 /* ============================================================ */
@@ -668,7 +749,8 @@ body { margin: 0; font-family: 'Montserrat', sans-serif; color: var(--text-main)
 
     /* MIRA Mobile */
     .mira-fab { bottom: 80px; left: 15px; width: 48px; height: 48px; font-size: 18px; }
-    .mira-container { left: 8px; right: 8px; bottom: 140px; width: auto; max-height: 55vh; }
+    .mira-container { left: 8px; right: 8px; bottom: 140px; width: auto; max-height: 60vh; }
+    .mira-tab { font-size: 9px; padding: 8px 2px; gap: 3px; }
 
     /* AZ Mobile */
     .basemap-menu { width: 200px; }
