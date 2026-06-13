@@ -331,6 +331,13 @@ map.on('click', e => {
     document.getElementById('longitud').value = e.latlng.lng.toFixed(6);
     if (tempMarker) map.removeLayer(tempMarker);
     tempMarker = L.marker(e.latlng).addTo(map).bindPopup('Ubicación').openPopup();
+
+    // ── Alerta de Voz — Desbloquear síntesis tras primer gesto del usuario ──
+    // El navegador requiere una interacción previa (gesto explícito) para permitir
+    // window.speechSynthesis.speak(). Este clic la habilita de forma silenciosa.
+    if (!speechSynthesisEnabled && 'speechSynthesis' in window) {
+        speechSynthesisEnabled = true;
+    }
 });
 
 document.getElementById('perimetroLayer').addEventListener('change', e => e.target.checked ? map.addLayer(perimetroLayerGroup) : map.removeLayer(perimetroLayerGroup));
@@ -899,6 +906,23 @@ const motorAlertas = {
     cooldownMs:   30000    // 30 s entre alertas repetidas de la MISMA zona
 };
 
+// ── Alerta Asistida por Voz — Web Speech API ─────────────────
+/**
+ * Flag habilitado tras el primer clic del usuario en el mapa.
+ * Requerido por la política de autoplay de los navegadores modernos:
+ * la síntesis de voz solo puede iniciarse después de un gesto explícito.
+ * @type {boolean}
+ */
+let speechSynthesisEnabled = false;
+
+/**
+ * Mapa de cooldown independiente por zona para la alerta de voz.
+ * Clave: índice de zona (number) → Valor: timestamp del último disparo (ms).
+ * Cooldown: 60 segundos, separado del cooldown de vibración (30 s).
+ * @type {Map<number, number>}
+ */
+const lastAlertTime = new Map();
+
 // ── Marcadores de zonas críticas en el mapa ──────────────────
 let zonasMarkers = [];
 
@@ -958,6 +982,7 @@ function verificarProximidad(coords) {
                 motorAlertas.ultimaAlerta = { zonaIdx: i, timestamp: ahora };
                 mostrarAlertaProximidad(zona, Math.round(distancia));
                 activarVibracionTactica();
+                activarAlertaVoz(i); // Complemento de voz (cooldown propio: 60 s)
             }
             return; // Alerta de zona más cercana encontrada, detener iteración
         }
@@ -976,6 +1001,46 @@ function activarVibracionTactica() {
     if ('vibrate' in navigator) {
         navigator.vibrate([500, 200, 500]);
     }
+}
+
+// ── Alerta Asistida por Voz ───────────────────────────────────
+/**
+ * Pronuncia el mensaje de precaución usando la Web Speech API (speechSynthesis).
+ * Solo se ejecuta si:
+ *   1. El navegador es compatible con 'speechSynthesis'.
+ *   2. El usuario ya realizó un gesto en el mapa (speechSynthesisEnabled === true).
+ *   3. Han transcurrido ≥ 60 segundos desde la última alerta de voz en esa zona.
+ *
+ * @param {number} zonaIdx - Índice de la zona crítica detectada (para cooldown por zona)
+ */
+function activarAlertaVoz(zonaIdx) {
+    // 1. Compatibilidad del navegador con Web Speech API
+    if (!('speechSynthesis' in window)) return;
+
+    // 2. Verificar que el usuario ya habilitó la síntesis con un gesto previo
+    if (!speechSynthesisEnabled) return;
+
+    // 3. Cooldown independiente de 60 segundos por zona
+    const ahora      = Date.now();
+    const ultimoTick = lastAlertTime.get(zonaIdx) || 0;
+    const COOLDOWN_VOZ_MS = 60000; // 60 segundos
+
+    if ((ahora - ultimoTick) < COOLDOWN_VOZ_MS) return;
+
+    // Registrar timestamp ANTES del speak para evitar race conditions
+    lastAlertTime.set(zonaIdx, ahora);
+
+    // 4. Cancelar cualquier utterance previa que pudiera estar en cola
+    window.speechSynthesis.cancel();
+
+    // 5. Configurar y disparar la utterance
+    const utterance   = new SpeechSynthesisUtterance();
+    utterance.text    = 'Precaución: aproximación a zona de alta accidentabilidad';
+    utterance.lang    = 'es-MX';   // Español Latinoamericano (compatible con Ecuador)
+    utterance.rate    = 1.0;       // Velocidad normal
+    utterance.volume  = 1.0;       // Volumen máximo
+
+    window.speechSynthesis.speak(utterance);
 }
 
 // ── Mostrar overlay de alerta ────────────────────────────────
@@ -1023,6 +1088,10 @@ function iniciarMotorAlertas() {
         alert('⚠️ Geolocalización no disponible en este dispositivo.');
         return;
     }
+
+    // Limpiar cooldowns de voz al reiniciar el motor para que la primera
+    // entrada a zona siempre dispare audio (sin esperar 60 s de sesión anterior)
+    lastAlertTime.clear();
 
     motorAlertas.watchId = navigator.geolocation.watchPosition(
         (position) => {
@@ -1077,6 +1146,12 @@ function toggleMotorAlertas() {
     const chk = document.getElementById('motorAlertasToggle');
     if (chk) {
         chk.addEventListener('change', function () {
+            // El clic en el toggle ES un gesto del usuario válido para desbloquear
+            // la Web Speech API (política de autoplay). Lo aprovechamos aquí.
+            if ('speechSynthesis' in window) {
+                speechSynthesisEnabled = true;
+            }
+
             // Sincronizar: si el checkbox cambió a un estado distinto al motor, actuar
             if (chk.checked && !motorAlertas.activo) {
                 iniciarMotorAlertas();
